@@ -1,15 +1,16 @@
-pages:
-  image: node:20
+stages:
+  - build
 
+build_frontend:
+  stage: build
+  image: node:20
   tags:
     - hop-free
-
   script:
     - cd Frontend
     - npm install
     - npm run build
     - mv dist public
-
   artifacts:
     paths:
       - public
