@@ -6,6 +6,7 @@ export default defineConfig({
 
   base: '/Web-quan-ly-chung-cu/',
   publicPath: '/Web-quan-ly-chung-cu/',
+  hash: true,
 
   title: 'Apartment Management',
 
@@ -23,7 +24,6 @@ export default defineConfig({
   },
 
   antd: {},
-  
   request: {},
   model: {},
   initialState: {},
@@ -40,6 +40,5 @@ export default defineConfig({
   },
 
   fastRefresh: true,
-
-  esbuildMinifyIIFE: true,  
+  esbuildMinifyIIFE: true,
 });
