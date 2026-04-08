@@ -1,5 +1,5 @@
 pages:
-  image: node:18
+  image: node:20
 
   tags:
     - hop-free
