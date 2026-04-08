@@ -6,6 +6,11 @@ export default defineConfig({
 
   base: '/Web-quan-ly-chung-cu/',
   publicPath: '/Web-quan-ly-chung-cu/',
+
+  history: {
+    type: 'hash'
+  },
+
   hash: true,
 
   title: 'Apartment Management',
