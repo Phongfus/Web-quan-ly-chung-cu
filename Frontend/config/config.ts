@@ -4,6 +4,9 @@ import routes from './routes';
 export default defineConfig({
   routes,
 
+  base: '/Web-quan-ly-chung-cu/',
+  publicPath: '/Web-quan-ly-chung-cu/',
+
   title: 'Apartment Management',
 
   layout: {
