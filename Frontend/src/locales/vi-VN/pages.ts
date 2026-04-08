@@ -122,6 +122,8 @@ export default {
   'pages.apartment.area': 'Diện tích (m²)',
   'pages.apartment.status': 'Trạng thái',
   'pages.apartment.status.available': 'Trống',
+  'pages.apartment.status.sold': 'Đã bán',
+  'pages.apartment.status.rented': 'Cho thuê',
   'pages.apartment.status.occupied': 'Đã thuê',
   'pages.apartment.status.maintenance': 'Bảo trì',
   'pages.apartment.actions': 'Thao tác',

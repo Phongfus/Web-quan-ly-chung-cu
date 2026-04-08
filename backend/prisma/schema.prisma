@@ -55,6 +55,8 @@ enum ServiceType {
 // Trạng thái căn hộ
 enum ApartmentStatus {
   AVAILABLE
+  SOLD
+  RENTED
   OCCUPIED
   MAINTENANCE
 }
@@ -153,12 +155,14 @@ model ApartmentType {
 
 model Apartment {
   id       String   @id @default(uuid())
-  code     String   // mã căn hộ
-  floorId  String
-  typeId   String
+  code       String   // mã căn hộ
+  floorId    String
+  typeId     String
 
-  area     Float?
-  status   ApartmentStatus @default(AVAILABLE)
+  area       Float?
+  salePrice  Float?
+  rentPrice  Float?
+  status     ApartmentStatus @default(AVAILABLE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -14,6 +14,13 @@ export default () => {
 
   const columns: ProColumns<ResidentItem>[] = [
     {
+      title: 'STT',
+      dataIndex: 'index',
+      valueType: 'index',
+      width: 60,
+      search: false,
+    },
+    {
       title: 'ID',
       dataIndex: 'id',
       width: 80,
@@ -143,6 +150,11 @@ export default () => {
         rowKey="id"
         search={{
           labelWidth: 120,
+        }}
+        pagination={{
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
+          defaultPageSize: 10,
         }}
         toolBarRender={() => [
           <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>

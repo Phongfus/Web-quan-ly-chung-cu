@@ -107,6 +107,8 @@ export default {
   'pages.apartment.area': 'Area (m²)',
   'pages.apartment.status': 'Status',
   'pages.apartment.status.available': 'Available',
+  'pages.apartment.status.sold': 'Sold',
+  'pages.apartment.status.rented': 'Rented',
   'pages.apartment.status.occupied': 'Occupied',
   'pages.apartment.status.maintenance': 'Maintenance',
   'pages.apartment.actions': 'Actions',

@@ -3,8 +3,10 @@ import { request } from "@umijs/max";
 export interface ApartmentItem {
   id: string;
   code: string;
-  status: "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
+  status: "AVAILABLE" | "SOLD" | "RENTED" | "OCCUPIED" | "MAINTENANCE";
   area?: number;
+  salePrice?: number;
+  rentPrice?: number;
   createdAt: string;
 
   floor?: {
