@@ -4,20 +4,6 @@ import routes from './routes';
 export default defineConfig({
   routes,
 
-  // bắt buộc khi deploy GitHub Pages
-  base: '/Web-quan-ly-chung-cu/',
-  publicPath: '/Web-quan-ly-chung-cu/',
-
-  // dùng hash router để tránh lỗi 404
-  history: {
-    type: 'hash',
-  },
-
-  hash: true,
-
-  // build static
-  exportStatic: {},
-
   title: 'Apartment Management',
 
   layout: {
@@ -50,5 +36,4 @@ export default defineConfig({
   },
 
   fastRefresh: true,
-  esbuildMinifyIIFE: true,
 });
