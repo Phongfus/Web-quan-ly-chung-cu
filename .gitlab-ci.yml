@@ -1,15 +1,15 @@
-echo pages:> .gitlab-ci.yml
-echo   image: node:18>> .gitlab-ci.yml
-echo.>> .gitlab-ci.yml
-echo   tags:>> .gitlab-ci.yml
-echo     - hop-free>> .gitlab-ci.yml
-echo.>> .gitlab-ci.yml
-echo   script:>> .gitlab-ci.yml
-echo     - cd Frontend>> .gitlab-ci.yml
-echo     - npm install>> .gitlab-ci.yml
-echo     - npm run build>> .gitlab-ci.yml
-echo     - mv dist public>> .gitlab-ci.yml
-echo.>> .gitlab-ci.yml
-echo   artifacts:>> .gitlab-ci.yml
-echo     paths:>> .gitlab-ci.yml
-echo       - public>> .gitlab-ci.yml
+pages:
+  image: node:18
+
+  tags:
+    - hop-free
+
+  script:
+    - cd Frontend
+    - npm install
+    - npm run build
+    - mv dist public
+
+  artifacts:
+    paths:
+      - public
