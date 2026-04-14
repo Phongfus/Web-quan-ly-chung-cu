@@ -5,13 +5,14 @@ import { requireRole } from "../../middleware/role.middleware";
 
 const router = Router();
 
-// Tất cả routes đều cần authentication và role ADMIN
-router.use(authMiddleware, requireRole("ADMIN"));
+// POST endpoint không yêu cầu role ADMIN (chỉ yêu cầu là user thường)
+router.post("/", controller.createResident);
 
+// Tất cả routes khác đều cần authentication
+router.use(authMiddleware);
 router.get("/", controller.getResidents);
 router.get("/:id", controller.getResidentById);
-router.post("/", controller.createResident);
-router.put("/:id", controller.updateResident);
-router.delete("/:id", controller.deleteResident);
+router.put("/:id", requireRole("ADMIN"), controller.updateResident);
+router.delete("/:id", requireRole("ADMIN"), controller.deleteResident);
 
 export default router;

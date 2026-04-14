@@ -2,6 +2,7 @@ import { request } from '@umijs/max';
 
 export interface ServiceItem {
   id: string;
+  serviceNumber?: string;
   apartmentId: string;
   requesterId: string;
   type: 'ELECTRIC' | 'WATER' | 'AIR_CONDITIONER' | 'INTERNET' | 'OTHER';
@@ -13,7 +14,7 @@ export interface ServiceItem {
   apartment?: {
     code: string;
   };
-  requester?: {
+  user?: {
     fullName: string;
     email: string;
   };

@@ -4,38 +4,66 @@ import dayjs from 'dayjs';
 
 export const getDashboard = async (req: Request, res: Response) => {
   try {
-    const { month } = req.query;
+    const year = req.query.year ? String(req.query.year) : dayjs().format('YYYY');
+    
+    console.log('📊 Dashboard API called with year:', year);
 
-    const current = dayjs(month as string);
-    const year = current.year();
-
-    const startOfMonth = current.startOf('month').toDate();
-    const endOfMonth = current.endOf('month').toDate();
+    const currentYear = dayjs(`${year}-01-01`);
+    const startOfYear = currentYear.startOf('year').toDate();
+    const endOfYear = currentYear.endOf('year').toDate();
 
     // ===== BASIC STATS =====
-    const [totalApartment, totalResident, payments, maintenance] =
+    const [totalApartment, totalResident, totalRevenue, totalMaintenance, newResidents, paidPayments, unpaidBills] =
       await Promise.all([
         prisma.apartment.count(),
         prisma.resident.count(),
-        prisma.payment.aggregate({
+        prisma.bill.aggregate({
           _sum: { amount: true },
           where: {
+            year: Number(year),
+          },
+        }),
+        prisma.serviceRequest.count({
+          where: {
             createdAt: {
-              gte: startOfMonth,
-              lte: endOfMonth,
+              gte: startOfYear,
+              lte: endOfYear,
             },
           },
         }),
-        prisma.serviceRequest.count(),
+        prisma.user.count({
+          where: {
+            role: 'RESIDENT',
+            createdAt: {
+              gte: startOfYear,
+              lte: endOfYear,
+            },
+          },
+        }),
+        prisma.payment.count({
+          where: {
+            status: 'SUCCESS',
+            createdAt: {
+              gte: startOfYear,
+              lte: endOfYear,
+            },
+          },
+        }),
+        prisma.bill.count({
+          where: {
+            status: 'UNPAID',
+            year: Number(year),
+          },
+        }),
       ]);
 
     // ===== REVENUE RAW =====
     const revenueRaw = await prisma.$queryRaw<any[]>`
-      SELECT 
-        EXTRACT(MONTH FROM "createdAt") as month,
+      SELECT
+        month,
         SUM(amount)::int as value
-      FROM "Payment"
-      WHERE EXTRACT(YEAR FROM "createdAt") = ${year}
+      FROM "Bill"
+      WHERE year = ${year}::int
       GROUP BY month
       ORDER BY month
     `;
@@ -51,37 +79,57 @@ export const getDashboard = async (req: Request, res: Response) => {
       };
     });
 
+    // ===== BILL DATA =====
+    const billData = await prisma.$queryRaw<any[]>`
+      SELECT
+        status,
+        SUM(amount)::int as value
+      FROM "Bill"
+      WHERE year = ${year}::int
+      GROUP BY status
+    `;
+
+    const billChartData = billData.map((item) => ({
+      type: item.status === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán',
+      value: item.value,
+    }));
+
     // ===== RESIDENT CHART =====
     const residentData = await prisma.$queryRaw<any[]>`
       SELECT 
-        TO_CHAR("createdAt", 'DD') as day,
+        TO_CHAR("createdAt", 'DD/MM') as day,
         COUNT(*)::int as value
-      FROM "Resident"
-      WHERE "createdAt" BETWEEN ${startOfMonth} AND ${endOfMonth}
-      GROUP BY day
-      ORDER BY day
+      FROM "User"
+      WHERE EXTRACT(year FROM "createdAt") = ${year}::int
+      AND "role" = 'RESIDENT'
+      GROUP BY TO_CHAR("createdAt", 'DD/MM')
+      ORDER BY TO_CHAR("createdAt", 'DD/MM')
     `;
 
     // ===== ACTIVITIES =====
     const activities = [
-      'Cư dân mới đăng ký',
-      'Thanh toán hóa đơn',
-      'Yêu cầu sửa chữa',
-      'Cập nhật căn hộ',
+      `Cư dân mới: ${newResidents}`,
+      `Thanh toán thành công: ${paidPayments}`,
+      `Yêu cầu sửa chữa trong năm: ${totalMaintenance}`,
+      `Hóa đơn chưa thanh toán: ${unpaidBills}`,
     ];
 
     res.json({
       totalApartment,
       totalResident,
-      revenue: payments._sum.amount || 0,
-      maintenance,
+      revenue: totalRevenue._sum.amount || 0,
+      maintenance: totalMaintenance,
 
       revenueData,
       residentData,
+      billChartData,
       activities,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Dashboard error' });
+    console.error('❌ Dashboard Error:', error);
+    res.status(500).json({ 
+      message: 'Dashboard error',
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 };

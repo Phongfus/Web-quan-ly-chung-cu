@@ -7,10 +7,39 @@ interface AuthRequest extends Request {
   };
 }
 
+const generateServiceId = async () => {
+  const existingIds = await prisma.serviceRequest.findMany({
+    where: {
+      id: {
+        startsWith: "CD",
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const numbers = existingIds
+    .map((item) => item.id.match(/^CD(\d{4})$/))
+    .filter((match): match is RegExpMatchArray => !!match)
+    .map((match) => parseInt(match[1], 10))
+    .sort((a, b) => a - b);
+
+  let nextNumber = 1;
+  for (const number of numbers) {
+    if (number !== nextNumber) {
+      break;
+    }
+    nextNumber += 1;
+  }
+
+  return `SC${nextNumber.toString().padStart(4, "0")}`;
+};
+
 // Tạo yêu cầu dịch vụ mới
 export const createService = async (req: AuthRequest, res: Response) => {
   try {
-    const { apartmentId, type, description, title } = req.body;
+    const { apartmentId, type, description } = req.body;
 
     const userId = req.user?.id;
 
@@ -19,12 +48,13 @@ export const createService = async (req: AuthRequest, res: Response) => {
         message: "Unauthorized",
       });
     }
+    const serviceId = await generateServiceId();
 
     const data = await prisma.serviceRequest.create({
       data: {
+        id: serviceId,
         apartmentId,
         userId,
-        title,
         description,
         type,
         status: "PENDING",
@@ -45,11 +75,10 @@ export const createService = async (req: AuthRequest, res: Response) => {
     });
 
     res.status(201).json(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Create service error:", error);
-
     res.status(500).json({
-      message: "Không thể tạo yêu cầu dịch vụ",
+      message: error.message || "Không thể tạo yêu cầu dịch vụ",
     });
   }
 };
@@ -128,7 +157,7 @@ export const updateService = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
 
-    const { status, description, title } = req.body;
+    const { status, description } = req.body;
 
     const data = await prisma.serviceRequest.update({
       where: { id },
@@ -136,7 +165,6 @@ export const updateService = async (req: Request, res: Response) => {
       data: {
         status,
         description,
-        title,
       },
 
       include: {

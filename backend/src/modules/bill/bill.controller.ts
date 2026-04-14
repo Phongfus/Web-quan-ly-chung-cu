@@ -77,6 +77,35 @@ export const getBillById = async (req: Request, res: Response) => {
   }
 };
 
+const generateBillId = async () => {
+  const existingIds = await prisma.bill.findMany({
+    where: {
+      id: {
+        startsWith: "HD",
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const numbers = existingIds
+    .map((item) => item.id.match(/^HD(\d{4})$/))
+    .filter((match): match is RegExpMatchArray => !!match)
+    .map((match) => parseInt(match[1], 10))
+    .sort((a, b) => a - b);
+
+  let nextNumber = 1;
+  for (const number of numbers) {
+    if (number !== nextNumber) {
+      break;
+    }
+    nextNumber += 1;
+  }
+
+  return `HD${nextNumber.toString().padStart(4, "0")}`;
+};
+
 // Tạo hóa đơn mới
 export const createBill = async (req: Request, res: Response) => {
   try {
@@ -91,8 +120,11 @@ export const createBill = async (req: Request, res: Response) => {
       dueDate,
     } = req.body;
 
+    const billId = await generateBillId();
+
     const data = await prisma.bill.create({
       data: {
+        id: billId,
         apartmentId,
         electricityFee: electricityFee || 0,
         waterFee: waterFee || 0,

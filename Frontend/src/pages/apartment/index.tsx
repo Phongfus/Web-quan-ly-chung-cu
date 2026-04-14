@@ -8,6 +8,7 @@ import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
 } from "@/components/AdvancedFilterDrawer";
+import SortIcon, { SortDirection } from "@/components/SortIcon";
 import {
   getApartments,
   createApartment,
@@ -32,6 +33,9 @@ export default () => {
   const [quickSearch, setQuickSearch] = useState<string>('');
   const [filterRows, setFilterRows] = useState<FilterRowItem[]>([]);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [salePriceSort, setSalePriceSort] = useState<SortDirection>(null);
+  const [rentPriceSort, setRentPriceSort] = useState<SortDirection>(null);
+  const [areaSort, setAreaSort] = useState<SortDirection>(null);
 
   const loadMetaData = async () => {
     try {
@@ -98,8 +102,8 @@ export default () => {
     },
     { key: 'floorNumber', label: intl.formatMessage({ id: 'pages.apartment.floor' }), type: 'number' },
     { key: 'typeName', label: intl.formatMessage({ id: 'pages.apartment.type' }), type: 'text' },
-    { key: 'salePrice', label: 'Giá bán', type: 'number' },
-    { key: 'rentPrice', label: 'Giá thuê', type: 'number' },
+    { key: 'salePrice', label: intl.formatMessage({ id: 'pages.apartment.salePrice' }), type: 'number' },
+    { key: 'rentPrice', label: intl.formatMessage({ id: 'pages.apartment.rentPrice' }), type: 'number' },
     { key: 'area', label: intl.formatMessage({ id: 'pages.apartment.area' }), type: 'number' },
   ];
 
@@ -116,7 +120,7 @@ export default () => {
 
   const columns: ProColumns<ApartmentItem>[] = [
     {
-      title: "STT",
+      title: intl.formatMessage({ id: 'pages.common.index' }),
       dataIndex: "index",
       valueType: "index",
       width: 60,
@@ -131,43 +135,89 @@ export default () => {
     {
       title: intl.formatMessage({ id: 'pages.apartment.code' }),
       dataIndex: "code",
+      width: 80,
     },
     {
       title: intl.formatMessage({ id: 'pages.apartment.floor' }),
       dataIndex: ["floor", "number"],
+      width: 60,
       search: false,
     },
     {
       title: intl.formatMessage({ id: 'pages.apartment.type' }),
       dataIndex: ["type", "name"],
+      width: 90,
       search: false,
     },
     {
-      title: "Giá bán",
+      title: (
+        <Space>
+          {intl.formatMessage({ id: 'pages.apartment.salePrice' })}
+          <SortIcon
+            sortDirection={salePriceSort}
+            onSort={(direction) => {
+              setSalePriceSort(direction);
+              setRentPriceSort(null);
+              setAreaSort(null);
+              actionRef.current?.reload();
+            }}
+          />
+        </Space>
+      ),
       dataIndex: "salePrice",
+      width: 120,
       search: false,
       render: (_, record) =>
         record.salePrice != null
-          ? `${record.salePrice.toLocaleString("vi-VN")} đ`
+          ? `${record.salePrice.toLocaleString("vi-VN")}`
           : '-',
     },
     {
-      title: "Giá thuê",
+      title: (
+        <Space>
+          {intl.formatMessage({ id: 'pages.apartment.rentPrice' })}
+          <SortIcon
+            sortDirection={rentPriceSort}
+            onSort={(direction) => {
+              setRentPriceSort(direction);
+              setSalePriceSort(null);
+              setAreaSort(null);
+              actionRef.current?.reload();
+            }}
+          />
+        </Space>
+      ),
       dataIndex: "rentPrice",
+      width: 120,
       search: false,
       render: (_, record) =>
         record.rentPrice != null
-          ? `${record.rentPrice.toLocaleString("vi-VN")} đ`
+          ? `${record.rentPrice.toLocaleString("vi-VN")} `
           : '-',
     },
     {
-      title: intl.formatMessage({ id: 'pages.apartment.area' }),
+      title: (
+        <Space>
+          {intl.formatMessage({ id: 'pages.apartment.area' })}
+          <SortIcon
+            sortDirection={areaSort}
+            onSort={(direction) => {
+              setAreaSort(direction);
+              setSalePriceSort(null);
+              setRentPriceSort(null);
+              actionRef.current?.reload();
+            }}
+          />
+        </Space>
+      ),
       dataIndex: "area",
+      width: 120,
       search: false,
     },
     {
       title: intl.formatMessage({ id: 'pages.apartment.status' }),
       dataIndex: "status",
+      width: 90,
       render: (_, record) => (
         <Tag color={getStatusColor(record.status)}>
           {getStatusText(record.status)}
@@ -177,6 +227,7 @@ export default () => {
     {
       title: intl.formatMessage({ id: 'pages.apartment.actions' }),
       valueType: "option",
+      width: 120,
       render: (_, record) => [
         <Button
           key="edit"
@@ -318,6 +369,27 @@ export default () => {
       );
     }
 
+    // Apply sorting
+    if (salePriceSort) {
+      filtered = [...filtered].sort((a, b) => {
+        const aValue = a.salePrice || 0;
+        const bValue = b.salePrice || 0;
+        return salePriceSort === 'asc' ? aValue - bValue : bValue - aValue;
+      });
+    } else if (rentPriceSort) {
+      filtered = [...filtered].sort((a, b) => {
+        const aValue = a.rentPrice || 0;
+        const bValue = b.rentPrice || 0;
+        return rentPriceSort === 'asc' ? aValue - bValue : bValue - aValue;
+      });
+    } else if (areaSort) {
+      filtered = [...filtered].sort((a, b) => {
+        const aValue = a.area || 0;
+        const bValue = b.area || 0;
+        return areaSort === 'asc' ? aValue - bValue : bValue - aValue;
+      });
+    }
+
     return filtered;
   };
 
@@ -347,10 +419,11 @@ export default () => {
           pageSizeOptions: ['10', '20', '50', '100'],
           defaultPageSize: 10,
         }}
+        scroll={{ x: 'max-content', y: 'max-content' }}
         toolBarRender={() => [
           <Input.Search
             key="quickSearch"
-            placeholder="Tìm ID hoặc mã căn"
+            placeholder={intl.formatMessage({ id: 'pages.apartment.quickSearchPlaceholder' })}
             allowClear
             style={{ width: 320 }}
             value={quickSearch}
@@ -365,13 +438,13 @@ export default () => {
             type="default"
             onClick={() => setFilterDrawerOpen(true)}
           >
-            Bộ lọc nâng cao
+            {intl.formatMessage({ id: 'components.advancedFilter.open' })}
           </Button>,
           <Button
             key="clearFilters"
             onClick={handleClearFilters}
           >
-            Xóa bộ lọc
+            {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
           </Button>,
           <Button
             key="add"
@@ -398,13 +471,15 @@ export default () => {
           const totalRentPrice = allData.reduce((sum, item) => sum + (item.rentPrice || 0), 0);
 
           return (
-            <Table.Summary.Row style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
-              <Table.Summary.Cell index={0} colSpan={5}>Tổng cộng</Table.Summary.Cell>
+            <Table.Summary.Row style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5', position: 'sticky', bottom: 0, zIndex: 1 }}>
+              <Table.Summary.Cell index={0} colSpan={5}>
+                {intl.formatMessage({ id: 'pages.common.total' })}
+              </Table.Summary.Cell>
               <Table.Summary.Cell index={1}>
-                {totalSalePrice > 0 ? `${totalSalePrice.toLocaleString('vi-VN')} đ` : '-'}
+                {totalSalePrice > 0 ? `${totalSalePrice.toLocaleString('vi-VN')}` : '-'}
               </Table.Summary.Cell>
               <Table.Summary.Cell index={2}>
-                {totalRentPrice > 0 ? `${totalRentPrice.toLocaleString('vi-VN')} đ` : '-'}
+                {totalRentPrice > 0 ? `${totalRentPrice.toLocaleString('vi-VN')}` : '-'}
               </Table.Summary.Cell>
               <Table.Summary.Cell index={3}>
                 {totalArea > 0 ? `${totalArea.toLocaleString('vi-VN')} m²` : '-'}
@@ -421,7 +496,7 @@ export default () => {
         onApply={handleFilterSubmit}
         onClear={handleClearFilters}
         fields={filterFields}
-        quickSearchPlaceholder="Tìm ID hoặc mã căn"
+        quickSearchPlaceholder={intl.formatMessage({ id: 'pages.apartment.quickSearchPlaceholder' })}
         initialQuickSearch={quickSearch}
         initialFilters={filterRows}
       />
@@ -472,19 +547,19 @@ export default () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="salePrice" label="Giá bán">
+          <Form.Item name="salePrice" label={intl.formatMessage({ id: 'pages.apartment.salePrice' })}>
             <InputNumber
               min={0}
               style={{ width: "100%" }}
-              placeholder="Nhập giá bán"
+              placeholder={intl.formatMessage({ id: 'pages.apartment.salePricePlaceholder' })}
             />
           </Form.Item>
 
-          <Form.Item name="rentPrice" label="Giá thuê">
+          <Form.Item name="rentPrice" label={intl.formatMessage({ id: 'pages.apartment.rentPrice' })}>
             <InputNumber
               min={0}
               style={{ width: "100%" }}
-              placeholder="Nhập giá thuê"
+              placeholder={intl.formatMessage({ id: 'pages.apartment.rentPricePlaceholder' })}
             />
           </Form.Item>      
 

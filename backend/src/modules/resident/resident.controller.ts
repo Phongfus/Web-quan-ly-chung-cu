@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../config/prisma";
+import { hashPassword } from "../../utils/hash";
+import { generateNextResidentId } from "../../utils/resident-id";
 
 // Lấy danh sách cư dân
 export const getResidents = async (_req: Request, res: Response) => {
@@ -85,23 +87,36 @@ export const createResident = async (req: Request, res: Response) => {
   try {
     const { email, password, fullName, phone, apartmentId, identityCard, dateOfBirth } = req.body;
 
+    // Kiểm tra dữ liệu bắt buộc
+    if (!email || !password || !fullName || !apartmentId) {
+      return res.status(400).json({
+        message: "Thiếu dữ liệu bắt buộc: email, password, fullName, apartmentId",
+      });
+    }
+
     // Tạo user và resident trong một transaction
     const data = await prisma.$transaction(async (tx) => {
+      const hashedPassword = await hashPassword(password);
+
       const user = await tx.user.create({
         data: {
           email,
-          password, // Nên hash password trước khi lưu
+          password: hashedPassword,
           fullName,
-          phone,
+          phone: phone || null,
           role: "RESIDENT",
         },
       });
 
+      // Sinh ID cư dân tự động (CD0001, CD0002, ...)
+      const residentId = await generateNextResidentId();
+
       const resident = await tx.resident.create({
         data: {
+          id: residentId,
           userId: user.id,
           apartmentId,
-          identityCard,
+          identityCard: identityCard || null,
           dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
         },
         include: {
@@ -128,10 +143,24 @@ export const createResident = async (req: Request, res: Response) => {
     });
 
     res.status(201).json(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Create resident error:", error);
+    
+    // Xử lý các lỗi cụ thể
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        message: "Email này đã được sử dụng",
+      });
+    }
+
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        message: "Căn hộ không tồn tại",
+      });
+    }
+
     res.status(500).json({
-      message: "Không thể tạo cư dân",
+      message: error.message || "Không thể tạo cư dân",
     });
   }
 };

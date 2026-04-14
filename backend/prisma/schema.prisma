@@ -7,43 +7,268 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//////////////////////
-// ENUM (KIỂU DỮ LIỆU)
-//////////////////////
+model User {
+  id              String               @id @default(uuid())
+  email           String               @unique
+  password        String
+  fullName        String
+  phone           String?
+  role            Role                 @default(RESIDENT)
+  isActive        Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  complaints      Complaint[]
+  conversations1  Conversation[]       @relation("User1")
+  conversations2  Conversation[]       @relation("User2")
+  sentMessages    Message[]            @relation("MessageSender")
+  notifications   NotificationTarget[]
+  resident        Resident?
+  serviceRequests ServiceRequest[]
+}
 
-// Vai trò người dùng
+model Building {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  floors    Floor[]
+}
+
+model Floor {
+  id         String      @id @default(uuid())
+  number     Int
+  buildingId String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  apartments Apartment[]
+  building   Building    @relation(fields: [buildingId], references: [id])
+
+  @@unique([number, buildingId])
+}
+
+model ApartmentType {
+  id          String      @id @default(uuid())
+  name        String
+  bedrooms    Int
+  livingRooms Int
+  maxPeople   Int?
+  maxVehicles Int?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  apartments  Apartment[]
+}
+
+model Apartment {
+  id              String           @id @default(uuid())
+  code            String
+  floorId         String
+  typeId          String
+  area            Float?
+  status          ApartmentStatus  @default(AVAILABLE)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rentPrice       Float?
+  salePrice       Float?
+  floor           Floor            @relation(fields: [floorId], references: [id])
+  type            ApartmentType    @relation(fields: [typeId], references: [id])
+  bills           Bill[]
+  complaints      Complaint[]
+  residents       Resident[]
+  serviceRequests ServiceRequest[]
+  utilities       Utility[]
+  vehicles        Vehicle[]
+
+  @@unique([code, floorId])
+  @@index([floorId])
+}
+
+model Resident {
+  id           String    @id
+  userId       String    @unique
+  apartmentId  String
+  identityCard String?
+  dateOfBirth  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  apartment    Apartment @relation(fields: [apartmentId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
+  vehicles     Vehicle[]
+
+  @@index([apartmentId])
+}
+
+model Vehicle {
+  id           String      @id @default(uuid())
+  ownerId      String
+  apartmentId  String
+  type         VehicleType
+  licensePlate String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  apartment    Apartment   @relation(fields: [apartmentId], references: [id])
+  owner        Resident    @relation(fields: [ownerId], references: [id])
+
+  @@index([apartmentId])
+}
+
+model Utility {
+  id             String    @id @default(uuid())
+  apartmentId    String
+  electricityOld Float
+  electricityNew Float
+  waterOld       Float
+  waterNew       Float
+  month          Int
+  year           Int
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  apartment      Apartment @relation(fields: [apartmentId], references: [id])
+
+  @@unique([apartmentId, month, year])
+  @@index([month, year])
+}
+
+model Bill {
+  id             String     @id @default(uuid())
+  apartmentId    String
+  electricityFee Float?
+  waterFee       Float?
+  serviceFee     Float?
+  amount         Float
+  month          Int
+  year           Int
+  dueDate        DateTime
+  status         BillStatus @default(UNPAID)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  apartment      Apartment  @relation(fields: [apartmentId], references: [id])
+  payments       Payment[]
+
+  @@unique([apartmentId, month, year])
+  @@index([status])
+  @@index([apartmentId])
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  billId    String
+  amount    Float
+  method    String
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  bill      Bill          @relation(fields: [billId], references: [id])
+
+  @@index([billId])
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  user1Id   String
+  user2Id   String
+  createdAt DateTime  @default(now())
+  user1     User      @relation("User1", fields: [user1Id], references: [id])
+  user2     User      @relation("User2", fields: [user2Id], references: [id])
+  messages  Message[]
+
+  @@index([user1Id])
+  @@index([user2Id])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([senderId])
+}
+
+model ServiceRequest {
+  id          String        @id
+  userId      String
+  apartmentId String
+  
+  description String
+  type        ServiceType
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  apartment   Apartment     @relation(fields: [apartmentId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([userId])
+  @@index([apartmentId])
+}
+
+model Complaint {
+  id          String          @id @default(uuid())
+  userId      String
+  apartmentId String
+  title       String
+  content     String
+  status      ComplaintStatus @default(PENDING)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  apartment   Apartment       @relation(fields: [apartmentId], references: [id])
+  user        User            @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([userId])
+}
+
+model Notification {
+  id        String               @id @default(uuid())
+  title     String
+  content   String
+  createdAt DateTime             @default(now())
+  targets   NotificationTarget[]
+}
+
+model NotificationTarget {
+  id             String       @id @default(uuid())
+  notificationId String
+  userId         String
+  isRead         Boolean      @default(false)
+  notification   Notification @relation(fields: [notificationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([notificationId, userId])
+  @@index([userId])
+}
+
 enum Role {
   ADMIN
   RESIDENT
 }
 
-// Trạng thái hóa đơn
 enum BillStatus {
   UNPAID
   PAID
 }
 
-// Trạng thái yêu cầu sửa chữa
 enum RequestStatus {
   PENDING
   PROCESSING
   DONE
 }
 
-// Trạng thái khiếu nại
 enum ComplaintStatus {
   PENDING
   RESOLVED
 }
 
-// Loại xe
 enum VehicleType {
   CAR
   MOTORBIKE
   BICYCLE
 }
 
-// Loại dịch vụ sửa chữa
 enum ServiceType {
   ELECTRIC
   WATER
@@ -52,366 +277,16 @@ enum ServiceType {
   OTHER
 }
 
-// Trạng thái căn hộ
 enum ApartmentStatus {
   AVAILABLE
-  SOLD
-  RENTED
   OCCUPIED
   MAINTENANCE
+  SOLD
+  RENTED
 }
 
-// Trạng thái thanh toán
 enum PaymentStatus {
   PENDING
   SUCCESS
   FAILED
-}
-
-//////////////////////
-// USER (TÀI KHOẢN)
-//////////////////////
-
-model User {
-  id        String   @id @default(uuid()) // ID người dùng
-  email     String   @unique              // Email đăng nhập
-  password  String                        // Mật khẩu (đã hash)
-  fullName  String                        // Họ tên
-  phone     String?                       // SĐT
-  role      Role     @default(RESIDENT)   // Vai trò
-
-  isActive  Boolean  @default(true)       // Trạng thái tài khoản
-
-  createdAt DateTime @default(now())      // Ngày tạo
-  updatedAt DateTime @updatedAt           // Ngày cập nhật
-
-  // Quan hệ
-  resident  Resident?
-
-  sentMessages   Message[] @relation("MessageSender") // tin nhắn gửi
-  conversations1 Conversation[] @relation("User1")
-  conversations2 Conversation[] @relation("User2")
-
-  serviceRequests ServiceRequest[]
-  complaints      Complaint[]
-  notifications   NotificationTarget[]
-}
-
-//////////////////////
-// BUILDING (TÒA NHÀ)
-//////////////////////
-
-model Building {
-  id        String   @id @default(uuid())
-  name      String   // tên tòa nhà
-  address   String?  // địa chỉ
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  floors    Floor[]
-}
-
-//////////////////////
-// FLOOR (TẦNG)
-//////////////////////
-
-model Floor {
-  id         String   @id @default(uuid())
-  number     Int      // số tầng
-  buildingId String
-
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  building   Building @relation(fields: [buildingId], references: [id])
-  apartments Apartment[]
-
-  @@unique([number, buildingId]) // không trùng tầng
-}
-
-//////////////////////
-// LOẠI CĂN HỘ
-//////////////////////
-
-model ApartmentType {
-  id          String   @id @default(uuid())
-  name        String   // tên loại (1PN, 2PN,...)
-  bedrooms    Int
-  livingRooms Int
-
-  maxPeople   Int?
-  maxVehicles Int?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  apartments  Apartment[]
-}
-
-//////////////////////
-// CĂN HỘ
-//////////////////////
-
-model Apartment {
-  id       String   @id @default(uuid())
-  code       String   // mã căn hộ
-  floorId    String
-  typeId     String
-
-  area       Float?
-  salePrice  Float?
-  rentPrice  Float?
-  status     ApartmentStatus @default(AVAILABLE)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  floor    Floor         @relation(fields: [floorId], references: [id])
-  type     ApartmentType @relation(fields: [typeId], references: [id])
-
-  residents Resident[]
-  vehicles  Vehicle[]
-  utilities Utility[]
-  bills     Bill[]
-
-  serviceRequests ServiceRequest[]
-  complaints      Complaint[]
-
-  @@unique([code, floorId])
-  @@index([floorId])
-}
-
-//////////////////////
-// CƯ DÂN
-//////////////////////
-
-model Resident {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  apartmentId String
-
-  identityCard String?     // CMND/CCCD
-  dateOfBirth  DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User      @relation(fields: [userId], references: [id])
-  apartment Apartment @relation(fields: [apartmentId], references: [id])
-
-  vehicles Vehicle[]
-
-  @@index([apartmentId])
-}
-
-//////////////////////
-// XE
-//////////////////////
-
-model Vehicle {
-  id          String   @id @default(uuid())
-  ownerId     String
-  apartmentId String
-
-  type         VehicleType
-  licensePlate String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  owner     Resident  @relation(fields: [ownerId], references: [id])
-  apartment Apartment @relation(fields: [apartmentId], references: [id])
-
-  @@index([apartmentId])
-}
-
-//////////////////////
-// ĐIỆN NƯỚC
-//////////////////////
-
-model Utility {
-  id          String   @id @default(uuid())
-  apartmentId String
-
-  electricityOld Float
-  electricityNew Float
-
-  waterOld Float
-  waterNew Float
-
-  month Int
-  year  Int
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  apartment Apartment @relation(fields: [apartmentId], references: [id])
-
-  @@unique([apartmentId, month, year])
-  @@index([month, year])
-}
-
-//////////////////////
-// HÓA ĐƠN
-//////////////////////
-
-model Bill {
-  id          String   @id @default(uuid())
-  apartmentId String
-
-  electricityFee Float?
-  waterFee       Float?
-  serviceFee     Float?
-
-  amount Float
-
-  month Int
-  year  Int
-
-  dueDate DateTime
-  status  BillStatus @default(UNPAID)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  apartment Apartment @relation(fields: [apartmentId], references: [id])
-  payments  Payment[]
-
-  @@unique([apartmentId, month, year])
-  @@index([status])
-  @@index([apartmentId])
-}
-
-//////////////////////
-// THANH TOÁN
-//////////////////////
-
-model Payment {
-  id       String   @id @default(uuid())
-  billId   String
-  amount   Float
-  method   String
-  status   PaymentStatus @default(PENDING)
-
-  createdAt DateTime @default(now())
-
-  bill Bill @relation(fields: [billId], references: [id])
-
-  @@index([billId])
-}
-
-//////////////////////
-// CHAT
-//////////////////////
-
-model Conversation {
-  id      String @id @default(uuid())
-
-  user1Id String
-  user2Id String
-
-  createdAt DateTime @default(now())
-
-  user1 User @relation("User1", fields: [user1Id], references: [id])
-  user2 User @relation("User2", fields: [user2Id], references: [id])
-
-  messages Message[]
-
-  @@index([user1Id])
-  @@index([user2Id])
-}
-
-model Message {
-  id             String @id @default(uuid())
-  conversationId String
-  senderId       String
-
-  content String
-
-  createdAt DateTime @default(now())
-
-  conversation Conversation @relation(fields: [conversationId], references: [id])
-  sender       User         @relation("MessageSender", fields: [senderId], references: [id])
-
-  @@index([conversationId])
-  @@index([senderId])
-}
-
-//////////////////////
-// YÊU CẦU SỬA CHỮA
-//////////////////////
-
-model ServiceRequest {
-  id          String   @id @default(uuid())
-  userId      String
-  apartmentId String
-
-  title       String
-  description String
-
-  type   ServiceType
-  status RequestStatus @default(PENDING)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User      @relation(fields: [userId], references: [id])
-  apartment Apartment @relation(fields: [apartmentId], references: [id])
-
-  @@index([status])
-  @@index([userId])
-  @@index([apartmentId])
-}
-
-//////////////////////
-// KHIẾU NẠI
-//////////////////////
-
-model Complaint {
-  id          String   @id @default(uuid())
-  userId      String
-  apartmentId String
-
-  title   String
-  content String
-
-  status ComplaintStatus @default(PENDING)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User      @relation(fields: [userId], references: [id])
-  apartment Apartment @relation(fields: [apartmentId], references: [id])
-
-  @@index([status])
-  @@index([userId])
-}
-
-//////////////////////
-// THÔNG BÁO
-//////////////////////
-
-model Notification {
-  id      String @id @default(uuid())
-  title   String
-  content String
-
-  createdAt DateTime @default(now())
-
-  targets NotificationTarget[]
-}
-
-model NotificationTarget {
-  id             String @id @default(uuid())
-  notificationId String
-  userId         String
-
-  isRead Boolean @default(false)
-
-  notification Notification @relation(fields: [notificationId], references: [id])
-  user         User         @relation(fields: [userId], references: [id])
-  
-  @@index([userId])
-  @@unique([notificationId, userId])
 }

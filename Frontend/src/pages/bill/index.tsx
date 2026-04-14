@@ -1,13 +1,15 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Tag, Modal, Form, Input, DatePicker, InputNumber, message, Table } from 'antd';
+import { Button, Tag, Modal, Form, Input, DatePicker, InputNumber, message, Table, Space, Select } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
 } from '@/components/AdvancedFilterDrawer';
+import SortIcon, { SortDirection } from '@/components/SortIcon';
 import { getBills, createBill, updateBill, deleteBill, BillItem } from '@/services/bill';
+import { getApartments, ApartmentItem } from '@/services/apartment';
 import dayjs from 'dayjs';
 
 export default () => {
@@ -17,13 +19,32 @@ export default () => {
   const [editingRecord, setEditingRecord] = useState<BillItem | null>(null);
   const [form] = Form.useForm();
   const [allData, setAllData] = useState<BillItem[]>([]);
+  const [apartments, setApartments] = useState<ApartmentItem[]>([]);
   const [quickSearch, setQuickSearch] = useState<string>('');
+  const [searchText, setSearchText] = useState<string>('');
   const [filterRows, setFilterRows] = useState<FilterRowItem[]>([]);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [electricityFeeSort, setElectricityFeeSort] = useState<SortDirection>(null);
+  const [waterFeeSort, setWaterFeeSort] = useState<SortDirection>(null);
+  const [serviceFeeSort, setServiceFeeSort] = useState<SortDirection>(null);
+  const [totalAmountSort, setTotalAmountSort] = useState<SortDirection>(null);
+
+  const loadApartments = async () => {
+    try {
+      const data = await getApartments();
+      setApartments(data);
+    } catch (error) {
+      message.error('Không thể tải danh sách căn hộ');
+    }
+  };
+
+  useEffect(() => {
+    loadApartments();
+  }, []);
 
   const columns: ProColumns<BillItem>[] = [
     {
-      title: 'STT',
+      title: intl.formatMessage({ id: 'pages.common.index' }),
       dataIndex: 'index',
       valueType: 'index',
       width: 60,
@@ -38,47 +59,111 @@ export default () => {
     {
       title: intl.formatMessage({ id: 'pages.bill.apartment' }),
       dataIndex: ['apartment', 'code'],
+      width: 100,
       search: false,
     },
     {
       title: intl.formatMessage({ id: 'pages.bill.monthYear' }),
       dataIndex: 'month',
+      width: 100,
       search: false,
       render: (_, record) => `${record.month}/${record.year}`,
     },
     {
-      title: intl.formatMessage({ id: 'pages.bill.electricityFee' }),
+      title: (
+        <Space>
+          {intl.formatMessage({ id: 'pages.bill.electricityFee' })}
+          <SortIcon
+            sortDirection={electricityFeeSort}
+            onSort={(direction) => {
+              setElectricityFeeSort(direction);
+              setWaterFeeSort(null);
+              setServiceFeeSort(null);
+              setTotalAmountSort(null);
+              actionRef.current?.reload();
+            }}
+          />
+        </Space>
+      ),
       dataIndex: 'electricityFee',
+      width: 130,
       search: false,
-      render: (_, record) => record.electricityFee?.toLocaleString('vi-VN') + ' đ',
+      render: (_, record) => record.electricityFee?.toLocaleString('vi-VN') + '',
     },
     {
-      title: intl.formatMessage({ id: 'pages.bill.waterFee' }),
+      title: (
+        <Space>
+          {intl.formatMessage({ id: 'pages.bill.waterFee' })}
+          <SortIcon
+            sortDirection={waterFeeSort}
+            onSort={(direction) => {
+              setWaterFeeSort(direction);
+              setElectricityFeeSort(null);
+              setServiceFeeSort(null);
+              setTotalAmountSort(null);
+              actionRef.current?.reload();
+            }}
+          />
+        </Space>
+      ),
       dataIndex: 'waterFee',
+      width: 130,
       search: false,
-      render: (_, record) => record.waterFee?.toLocaleString('vi-VN') + ' đ',
+      render: (_, record) => record.waterFee?.toLocaleString('vi-VN') + '',
     },
     {
-      title: intl.formatMessage({ id: 'pages.bill.serviceFee' }),
+      title: (
+        <Space>
+          {intl.formatMessage({ id: 'pages.bill.serviceFee' })}
+          <SortIcon
+            sortDirection={serviceFeeSort}
+            onSort={(direction) => {
+              setServiceFeeSort(direction);
+              setElectricityFeeSort(null);
+              setWaterFeeSort(null);
+              setTotalAmountSort(null);
+              actionRef.current?.reload();
+            }}
+          />
+        </Space>
+      ),
       dataIndex: 'serviceFee',
+      width: 130,
       search: false,
-      render: (_, record) => record.serviceFee?.toLocaleString('vi-VN') + ' đ',
+      render: (_, record) => record.serviceFee?.toLocaleString('vi-VN') + '',
     },
     {
-      title: intl.formatMessage({ id: 'pages.bill.totalAmount' }),
+      title: (
+        <Space>
+          {intl.formatMessage({ id: 'pages.bill.totalAmount' })}
+          <SortIcon
+            sortDirection={totalAmountSort}
+            onSort={(direction) => {
+              setTotalAmountSort(direction);
+              setElectricityFeeSort(null);
+              setWaterFeeSort(null);
+              setServiceFeeSort(null);
+              actionRef.current?.reload();
+            }}
+          />
+        </Space>
+      ),
       dataIndex: 'amount',
+      width: 130,
       search: false,
-      render: (_, record) => <strong>{record.amount?.toLocaleString('vi-VN')} đ</strong>,
+      render: (_, record) => <strong>{record.amount?.toLocaleString('vi-VN')} </strong>,
     },
     {
       title: intl.formatMessage({ id: 'pages.bill.dueDate' }),
       dataIndex: 'dueDate',
+      width: 110,
       valueType: 'date',
       search: false,
     },
     {
       title: intl.formatMessage({ id: 'pages.bill.status' }),
       dataIndex: 'status',
+      width: 100,
       valueEnum: {
         UNPAID: { text: intl.formatMessage({ id: 'pages.bill.status.unpaid' }) },
         PAID: { text: intl.formatMessage({ id: 'pages.bill.status.paid' }) },
@@ -93,6 +178,7 @@ export default () => {
     {
       title: intl.formatMessage({ id: 'pages.bill.actions' }),
       valueType: 'option',
+      width: 130,
       render: (_, record) => [
         <Button
           key="edit"
@@ -130,6 +216,14 @@ export default () => {
     setIsModalOpen(true);
   };
 
+  const handleValuesChange = () => {
+    const electricity = form.getFieldValue('electricityFee') || 0;
+    const water = form.getFieldValue('waterFee') || 0;
+    const service = form.getFieldValue('serviceFee') || 0;
+    const total = Number(electricity) + Number(water) + Number(service);
+    form.setFieldValue('amount', total);
+  };
+
   const handleDelete = async (id: string) => {
     Modal.confirm({
       title: intl.formatMessage({ id: 'pages.bill.deleteConfirm' }),
@@ -150,6 +244,7 @@ export default () => {
     try {
       const data = {
         ...values,
+        amount: values.amount ?? 0,
         dueDate: values.dueDate?.format('YYYY-MM-DD'),
       };
       if (editingRecord) {
@@ -169,8 +264,13 @@ export default () => {
   const filterFields: FilterFieldDefinition[] = [
     { key: 'id', label: 'ID', type: 'text' },
     { key: 'apartmentCode', label: intl.formatMessage({ id: 'pages.bill.apartment' }), type: 'text' },
-    { key: 'month', label: intl.formatMessage({ id: 'pages.bill.monthYear' }), type: 'number' },
+    { key: 'month', label: intl.formatMessage({ id: 'pages.bill.month' }), type: 'number' },
     { key: 'year', label: intl.formatMessage({ id: 'pages.bill.year' }), type: 'number' },
+    { key: 'electricityFee', label: intl.formatMessage({ id: 'pages.bill.electricityFee' }), type: 'number' },
+    { key: 'waterFee', label: intl.formatMessage({ id: 'pages.bill.waterFee' }), type: 'number' },
+    { key: 'serviceFee', label: intl.formatMessage({ id: 'pages.bill.serviceFee' }), type: 'number' },
+    { key: 'amount', label: intl.formatMessage({ id: 'pages.bill.totalAmount' }), type: 'number' },
+    { key: 'dueDate', label: intl.formatMessage({ id: 'pages.bill.dueDate' }), type: 'text' },
     {
       key: 'status',
       label: intl.formatMessage({ id: 'pages.bill.status' }),
@@ -200,8 +300,15 @@ export default () => {
 
   const handleClearFilters = () => {
     setQuickSearch('');
+    setSearchText('');
     setFilterRows([]);
     setFilterDrawerOpen(false);
+    actionRef.current?.reload();
+  };
+
+  const handleExternalSearch = (value: string) => {
+    setQuickSearch(value);
+    setSearchText(value);
     actionRef.current?.reload();
   };
 
@@ -248,7 +355,6 @@ export default () => {
     if (quickSearch) {
       const term = quickSearch.trim().toLowerCase();
       filtered = filtered.filter((item) =>
-        item.id.toLowerCase().includes(term) ||
         (item.apartment?.code ?? '').toLowerCase().includes(term)
       );
     }
@@ -268,6 +374,36 @@ export default () => {
       );
     }
 
+    // Apply sorting
+    if (electricityFeeSort) {
+      filtered = [...filtered].sort((a, b) => {
+        const aValue = a.electricityFee || 0;
+        const bValue = b.electricityFee || 0;
+        return electricityFeeSort === 'asc' ? aValue - bValue : bValue - aValue;
+      });
+    } else if (waterFeeSort) {
+      filtered = [...filtered].sort((a, b) => {
+        const aValue = a.waterFee || 0;
+        const bValue = b.waterFee || 0;
+        return waterFeeSort === 'asc' ? aValue - bValue : bValue - aValue;
+      });
+    } else if (serviceFeeSort) {
+      filtered = [...filtered].sort((a, b) => {
+        const aValue = a.serviceFee || 0;
+        const bValue = b.serviceFee || 0;
+        return serviceFeeSort === 'asc' ? aValue - bValue : bValue - aValue;
+      });
+    } else if (totalAmountSort) {
+      filtered = [...filtered].sort((a, b) => {
+        const aValue = a.amount || 0;
+        const bValue = b.amount || 0;
+        return totalAmountSort === 'asc' ? aValue - bValue : bValue - aValue;
+      });
+    } else {
+      // Default sort by ID (ascending: HD001 -> HD002)
+      filtered = [...filtered].sort((a, b) => a.id.localeCompare(b.id));
+    }
+
     return filtered;
   };
 
@@ -277,22 +413,30 @@ export default () => {
         headerTitle={intl.formatMessage({ id: 'pages.bill.title' })}
         actionRef={actionRef}
         rowKey="id"
-        search={{
-          labelWidth: 120,
-        }}
+        search={false}
         pagination={{
           showSizeChanger: true,
           pageSizeOptions: ['10', '20', '50', '100'],
           defaultPageSize: 10,
         }}
+        scroll={{ x: 'max-content', y: 'max-content'}}
         toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder={intl.formatMessage({ id: 'pages.bill.quickSearchPlaceholder' })}
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            onSearch={handleExternalSearch}
+            style={{ width: 240 }}
+            allowClear
+          />,
           <Button key="filter" type="default" onClick={() => setFilterDrawerOpen(true)}>
-            Bộ lọc nâng cao
+            {intl.formatMessage({ id: 'components.advancedFilter.open' })}
           </Button>,
           <Button key="clearFilters" onClick={handleClearFilters}>
-            Xóa bộ lọc
+            {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
           </Button>,
-          <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+          <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}> 
             {intl.formatMessage({ id: 'pages.bill.addNew' })}
           </Button>,
         ]}
@@ -313,19 +457,21 @@ export default () => {
           const totalAmount = allData.reduce((sum, item) => sum + (item.amount || 0), 0);
 
           return (
-            <Table.Summary.Row style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
-              <Table.Summary.Cell index={0} colSpan={4}>Tổng cộng</Table.Summary.Cell>
+            <Table.Summary.Row style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5', position: 'sticky', bottom: 0, zIndex: 1 }}>
+              <Table.Summary.Cell index={0} colSpan={4}>
+              {intl.formatMessage({ id: 'pages.common.total' })}
+            </Table.Summary.Cell>
               <Table.Summary.Cell index={1}>
-                {totalElectricityFee > 0 ? `${totalElectricityFee.toLocaleString('vi-VN')} đ` : '-'}
+                {totalElectricityFee > 0 ? `${totalElectricityFee.toLocaleString('vi-VN')} ` : '-'}
               </Table.Summary.Cell>
               <Table.Summary.Cell index={2}>
-                {totalWaterFee > 0 ? `${totalWaterFee.toLocaleString('vi-VN')} đ` : '-'}
+                {totalWaterFee > 0 ? `${totalWaterFee.toLocaleString('vi-VN')} ` : '-'}
               </Table.Summary.Cell>
               <Table.Summary.Cell index={3}>
-                {totalServiceFee > 0 ? `${totalServiceFee.toLocaleString('vi-VN')} đ` : '-'}
+                {totalServiceFee > 0 ? `${totalServiceFee.toLocaleString('vi-VN')} ` : '-'}
               </Table.Summary.Cell>
               <Table.Summary.Cell index={4}>
-                <strong>{totalAmount > 0 ? `${totalAmount.toLocaleString('vi-VN')} đ` : '-'}</strong>
+                <strong>{totalAmount > 0 ? `${totalAmount.toLocaleString('vi-VN')} ` : '-'}</strong>
               </Table.Summary.Cell>
               <Table.Summary.Cell index={5} colSpan={3}></Table.Summary.Cell>
             </Table.Summary.Row>
@@ -339,7 +485,7 @@ export default () => {
         onApply={handleFilterSubmit}
         onClear={handleClearFilters}
         fields={filterFields}
-        quickSearchPlaceholder="Tìm ID hoặc mã căn"
+        quickSearchPlaceholder={intl.formatMessage({ id: 'pages.bill.quickSearchPlaceholder' })}
         initialQuickSearch={quickSearch}
         initialFilters={filterRows}
       />
@@ -353,13 +499,26 @@ export default () => {
         onOk={() => form.submit()}
         destroyOnClose
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit} onValuesChange={handleValuesChange}>
           <Form.Item
             name="apartmentId"
             label={intl.formatMessage({ id: 'pages.bill.apartment' })}
             rules={[{ required: true, message: intl.formatMessage({ id: 'pages.bill.apartmentRequired' }) }]}
           >
-            <Input placeholder={intl.formatMessage({ id: 'pages.bill.apartmentPlaceholder' })} />
+            <Select
+              showSearch
+              placeholder={intl.formatMessage({ id: 'pages.bill.apartmentPlaceholder' })}
+              optionFilterProp="label"
+              filterOption={(input, option) =>
+                option?.label
+                  ? option.label.toString().toLowerCase().includes(input.toLowerCase())
+                  : false
+              }
+              options={apartments.map((item) => ({
+                label: item.code,
+                value: item.id,
+              }))}
+            />
           </Form.Item>
           <Form.Item
             name="month"
@@ -396,9 +555,8 @@ export default () => {
           <Form.Item
             name="amount"
             label={intl.formatMessage({ id: 'pages.bill.totalAmount' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.bill.amountRequired' }) }]}
           >
-            <InputNumber style={{ width: '100%' }} placeholder={intl.formatMessage({ id: 'pages.bill.amountPlaceholder' })} />
+            <InputNumber style={{ width: '100%' }} disabled placeholder={intl.formatMessage({ id: 'pages.bill.amountPlaceholder' })} />
           </Form.Item>
           <Form.Item
             name="dueDate"
@@ -412,7 +570,19 @@ export default () => {
               name="status"
               label={intl.formatMessage({ id: 'pages.bill.status' })}
             >
-              <Input placeholder={intl.formatMessage({ id: 'pages.bill.statusPlaceholder' })} />
+              <Select
+                placeholder={intl.formatMessage({ id: 'pages.bill.statusPlaceholder' })}
+                options={[
+                  {
+                    value: 'PAID',
+                    label: intl.formatMessage({ id: 'pages.bill.status.paid' }),
+                  },
+                  {
+                    value: 'UNPAID',
+                    label: intl.formatMessage({ id: 'pages.bill.status.unpaid' }),
+                  },
+                ]}
+              />
             </Form.Item>
           )}
         </Form>

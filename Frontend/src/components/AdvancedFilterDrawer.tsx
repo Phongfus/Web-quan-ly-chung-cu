@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Drawer, Input, InputNumber, Select, Space } from 'antd';
 import { CloseCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 
 export type FilterFieldType = 'text' | 'number' | 'select';
 
@@ -46,24 +47,24 @@ export interface AdvancedFilterDrawerProps {
   initialFilters?: FilterRowItem[];
 }
 
-const defaultTextOperators: FilterOperator[] = [
-  { value: 'eq', label: 'Bằng' },
-  { value: 'ne', label: 'Không bằng' },
-  { value: 'contains', label: 'Chứa' },
-  { value: 'notContains', label: 'Không chứa' },
-  { value: 'isEmpty', label: 'Rỗng' },
-  { value: 'isNotEmpty', label: 'Không rỗng' },
+const getDefaultTextOperators = (intl: any): FilterOperator[] => [
+  { value: 'eq', label: intl.formatMessage({ id: 'components.advancedFilter.operator.eq' }) },
+  { value: 'ne', label: intl.formatMessage({ id: 'components.advancedFilter.operator.ne' }) },
+  { value: 'contains', label: intl.formatMessage({ id: 'components.advancedFilter.operator.contains' }) },
+  { value: 'notContains', label: intl.formatMessage({ id: 'components.advancedFilter.operator.notContains' }) },
+  { value: 'isEmpty', label: intl.formatMessage({ id: 'components.advancedFilter.operator.isEmpty' }) },
+  { value: 'isNotEmpty', label: intl.formatMessage({ id: 'components.advancedFilter.operator.isNotEmpty' }) },
 ];
 
-const defaultNumberOperators: FilterOperator[] = [
-  { value: 'eq', label: 'Bằng' },
-  { value: 'ne', label: 'Không bằng' },
-  { value: 'gt', label: 'Lớn hơn' },
-  { value: 'lt', label: 'Nhỏ hơn' },
-  { value: 'gte', label: 'Lớn hơn hoặc bằng' },
-  { value: 'lte', label: 'Nhỏ hơn hoặc bằng' },
-  { value: 'isEmpty', label: 'Rỗng' },
-  { value: 'isNotEmpty', label: 'Không rỗng' },
+const getDefaultNumberOperators = (intl: any): FilterOperator[] => [
+  { value: 'eq', label: intl.formatMessage({ id: 'components.advancedFilter.operator.eq' }) },
+  { value: 'ne', label: intl.formatMessage({ id: 'components.advancedFilter.operator.ne' }) },
+  { value: 'gt', label: intl.formatMessage({ id: 'components.advancedFilter.operator.gt' }) },
+  { value: 'lt', label: intl.formatMessage({ id: 'components.advancedFilter.operator.lt' }) },
+  { value: 'gte', label: intl.formatMessage({ id: 'components.advancedFilter.operator.gte' }) },
+  { value: 'lte', label: intl.formatMessage({ id: 'components.advancedFilter.operator.lte' }) },
+  { value: 'isEmpty', label: intl.formatMessage({ id: 'components.advancedFilter.operator.isEmpty' }) },
+  { value: 'isNotEmpty', label: intl.formatMessage({ id: 'components.advancedFilter.operator.isNotEmpty' }) },
 ];
 
 const filterKeyToField = (fields: FilterFieldDefinition[], fieldKey: string) =>
@@ -81,11 +82,11 @@ const createEmptyRow = (fields: FilterFieldDefinition[]): FilterRowItem => {
 
 const operatorNeedsValue = (operator: string) => operator !== 'isEmpty' && operator !== 'isNotEmpty';
 
-const getOperatorsForField = (field: FilterFieldDefinition): FilterOperator[] => {
+const getOperatorsForField = (field: FilterFieldDefinition, intl: any): FilterOperator[] => {
   if (field.operators) {
     return field.operators;
   }
-  return field.type === 'number' ? defaultNumberOperators : defaultTextOperators;
+  return field.type === 'number' ? getDefaultNumberOperators(intl) : getDefaultTextOperators(intl);
 };
 
 export default function AdvancedFilterDrawer({
@@ -94,11 +95,19 @@ export default function AdvancedFilterDrawer({
   onApply,
   onClear,
   fields,
-  title = 'Bộ lọc nâng cao',
-  quickSearchPlaceholder = 'Tìm kiếm nhanh',
+  title,
+  quickSearchPlaceholder,
   initialQuickSearch = '',
   initialFilters = [],
 }: AdvancedFilterDrawerProps) {
+  const intl = useIntl();
+  const drawerTitle = title || intl.formatMessage({ id: 'components.advancedFilter.title' });
+  const searchPlaceholder = quickSearchPlaceholder || intl.formatMessage({ id: 'components.advancedFilter.quickSearchPlaceholder' });
+  const valuePlaceholder = intl.formatMessage({ id: 'components.advancedFilter.valuePlaceholder' });
+  const addConditionLabel = intl.formatMessage({ id: 'components.advancedFilter.addCondition' });
+  const clearFiltersLabel = intl.formatMessage({ id: 'components.advancedFilter.clearFilters' });
+  const applyLabel = intl.formatMessage({ id: 'components.advancedFilter.apply' });
+
   const [quickSearch, setQuickSearch] = useState(initialQuickSearch);
   const [rows, setRows] = useState<FilterRowItem[]>(
     initialFilters.length > 0 ? initialFilters : [createEmptyRow(fields)],
@@ -163,7 +172,7 @@ export default function AdvancedFilterDrawer({
 
   return (
     <Drawer
-      title={title}
+      title={drawerTitle}
       placement="right"
       width={560}
       onClose={onClose}
@@ -172,15 +181,14 @@ export default function AdvancedFilterDrawer({
     >
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Input
-          placeholder={quickSearchPlaceholder}
-          value={quickSearch}
+          placeholder={searchPlaceholder}
           onChange={(event) => setQuickSearch(event.target.value)}
           allowClear
         />
 
         {rows.map((row) => {
           const field = fieldMap.get(row.field) || fields[0];
-          const operators = getOperatorsForField(field);
+          const operators = getOperatorsForField(field, intl);
           const showValue = operatorNeedsValue(row.operator);
 
           return (
@@ -211,11 +219,11 @@ export default function AdvancedFilterDrawer({
 
               {showValue ? (
                 field.type === 'number' ? (
-                  <InputNumber
+                          <InputNumber
                     style={{ width: 180 }}
                     value={typeof row.value === 'number' ? row.value : undefined}
                     onChange={(value) => updateRow(row.id, { value: value ?? undefined })}
-                    placeholder="Giá trị"
+                    placeholder={valuePlaceholder}
                   />
                 ) : field.type === 'select' ? (
                   <Select
@@ -235,7 +243,7 @@ export default function AdvancedFilterDrawer({
                     style={{ width: 180 }}
                     value={row.value as string}
                     onChange={(event) => updateRow(row.id, { value: event.target.value })}
-                    placeholder="Giá trị"
+                    placeholder={valuePlaceholder}
                   />
                 )
               ) : (
@@ -252,12 +260,12 @@ export default function AdvancedFilterDrawer({
         })}
 
         <Button type="dashed" icon={<PlusOutlined />} onClick={addRow} block>
-          Thêm điều kiện lọc
+          {addConditionLabel}
         </Button>
 
         <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Button onClick={handleClear}>Xóa bộ lọc</Button>
-          <Button type="primary" onClick={handleApply}>Áp dụng</Button>
+          <Button onClick={handleClear}>{clearFiltersLabel}</Button>
+          <Button type="primary" onClick={handleApply}>{applyLabel}</Button>
         </Space>
       </Space>
     </Drawer>

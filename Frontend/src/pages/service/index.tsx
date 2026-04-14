@@ -1,9 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Tag, Modal, Form, Input, Select, message } from 'antd';
+import { Button, Tag, Modal, Form, Input, Select, message, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
+import AdvancedFilterDrawer, {
+  FilterFieldDefinition,
+  FilterRowItem,
+} from '@/components/AdvancedFilterDrawer';
 import { getServices, createService, updateService, deleteService, ServiceItem } from '@/services/service';
+import { getApartments, ApartmentItem } from '@/services/apartment';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -14,6 +19,24 @@ export default () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ServiceItem | null>(null);
   const [form] = Form.useForm();
+  const [apartments, setApartments] = useState<ApartmentItem[]>([]);
+  const [allData, setAllData] = useState<ServiceItem[]>([]);
+  const [quickSearch, setQuickSearch] = useState<string>('');
+  const [filterRows, setFilterRows] = useState<FilterRowItem[]>([]);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
+  const loadApartments = async () => {
+    try {
+      const data = await getApartments();
+      setApartments(data);
+    } catch (error) {
+      message.error('Không thể tải danh sách căn hộ');
+    }
+  };
+
+  useEffect(() => {
+    loadApartments();
+  }, []);
 
   const getServiceTypeText = (type: string) => {
     const typeMap: Record<string, string> = {
@@ -49,28 +72,32 @@ export default () => {
       title: 'STT',
       dataIndex: 'index',
       valueType: 'index',
-      width: 60,
+      width: 50,
       search: false,
     },
     {
       title: 'ID',
-      dataIndex: 'id',
-      width: 80,
+      dataIndex: 'serviceNumber',
+      width: 75,
       search: false,
+      render: (_, record) => record.serviceNumber || record.id,
     },
     {
       title: intl.formatMessage({ id: 'pages.service.apartment' }),
       dataIndex: ['apartment', 'code'],
+      width: 90,
       search: false,
     },
     {
       title: intl.formatMessage({ id: 'pages.service.requester' }),
-      dataIndex: ['requester', 'fullName'],
+      dataIndex: ['user', 'fullName'],
+      width: 150,
       search: false,
     },
     {
       title: intl.formatMessage({ id: 'pages.service.type' }),
       dataIndex: 'type',
+      width: 100,
       valueEnum: {
         ELECTRIC: { text: intl.formatMessage({ id: 'pages.service.type.electric' }) },
         WATER: { text: intl.formatMessage({ id: 'pages.service.type.water' }) },
@@ -86,11 +113,13 @@ export default () => {
       title: intl.formatMessage({ id: 'pages.service.description' }),
       dataIndex: 'description',
       search: false,
+      width: 150,
       ellipsis: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.service.status' }),
       dataIndex: 'status',
+      width: 90,
       valueEnum: {
         PENDING: { text: intl.formatMessage({ id: 'pages.service.status.pending' }) },
         PROCESSING: { text: intl.formatMessage({ id: 'pages.service.status.processing' }) },
@@ -105,11 +134,13 @@ export default () => {
       title: intl.formatMessage({ id: 'pages.service.createdAt' }),
       dataIndex: 'createdAt',
       valueType: 'dateTime',
+      width: 160,
       search: false,
     },
     {
       title: intl.formatMessage({ id: 'pages.service.actions' }),
       valueType: 'option',
+      width: 180,
       render: (_, record) => [
         <Button
           key="edit"
@@ -176,33 +207,195 @@ export default () => {
     }
   };
 
+  const filterFields: FilterFieldDefinition[] = [
+    { key: 'id', label: 'ID', type: 'text' },
+    { key: 'apartmentCode', label: intl.formatMessage({ id: 'pages.service.apartment' }), type: 'text' },
+    { key: 'requesterName', label: intl.formatMessage({ id: 'pages.service.requester' }), type: 'text' },
+    { key: 'description', label: intl.formatMessage({ id: 'pages.service.description' }), type: 'text' },
+    {
+      key: 'type',
+      label: intl.formatMessage({ id: 'pages.service.type' }),
+      type: 'select',
+      options: [
+        { label: intl.formatMessage({ id: 'pages.service.type.electric' }), value: 'ELECTRIC' },
+        { label: intl.formatMessage({ id: 'pages.service.type.water' }), value: 'WATER' },
+        { label: intl.formatMessage({ id: 'pages.service.type.ac' }), value: 'AIR_CONDITIONER' },
+        { label: intl.formatMessage({ id: 'pages.service.type.internet' }), value: 'INTERNET' },
+        { label: intl.formatMessage({ id: 'pages.service.type.other' }), value: 'OTHER' },
+      ],
+    },
+    {
+      key: 'status',
+      label: intl.formatMessage({ id: 'pages.service.status' }),
+      type: 'select',
+      options: [
+        { label: intl.formatMessage({ id: 'pages.service.status.pending' }), value: 'PENDING' },
+        { label: intl.formatMessage({ id: 'pages.service.status.processing' }), value: 'PROCESSING' },
+        { label: intl.formatMessage({ id: 'pages.service.status.done' }), value: 'DONE' },
+      ],
+    },
+  ];
+
+  const getFieldValue = (item: ServiceItem, field: string) => {
+    switch (field) {
+      case 'apartmentCode':
+        return item.apartment?.code;
+      case 'requesterName':
+        return item.user?.fullName;
+      default:
+        return (item as any)[field];
+    }
+  };
+
+  const applyOperator = (value: any, operator: string, compare: any) => {
+    if (operator === 'isEmpty') {
+      return value === undefined || value === null || value === '';
+    }
+    if (operator === 'isNotEmpty') {
+      return value !== undefined && value !== null && value !== '';
+    }
+
+    if (value === undefined || value === null) {
+      return false;
+    }
+
+    const stringValue = String(value).toLowerCase();
+    const compareValue = String(compare ?? '').toLowerCase();
+
+    switch (operator) {
+      case 'eq':
+        return stringValue === compareValue;
+      case 'ne':
+        return stringValue !== compareValue;
+      case 'contains':
+        return stringValue.includes(compareValue);
+      case 'notContains':
+        return !stringValue.includes(compareValue);
+      case 'gt':
+        return Number(value) > Number(compare);
+      case 'lt':
+        return Number(value) < Number(compare);
+      case 'gte':
+        return Number(value) >= Number(compare);
+      case 'lte':
+        return Number(value) <= Number(compare);
+      default:
+        return false;
+    }
+  };
+
+  const filterData = (data: ServiceItem[]) => {
+    let filtered = [...data];
+
+    if (quickSearch) {
+      const term = quickSearch.trim().toLowerCase();
+      filtered = filtered.filter((item) =>
+        item.id.toLowerCase().includes(term) ||
+        item.apartment?.code?.toLowerCase().includes(term) ||
+        item.user?.fullName?.toLowerCase().includes(term) ||
+        item.description?.toLowerCase().includes(term)
+      );
+    }
+
+    if (filterRows.length > 0) {
+      filtered = filtered.filter((item) =>
+        filterRows.every((row) => {
+          const value = getFieldValue(item, row.field);
+          if (row.operator === 'isEmpty') {
+            return value === undefined || value === null || value === '';
+          }
+          if (row.operator === 'isNotEmpty') {
+            return value !== undefined && value !== null && value !== '';
+          }
+          return applyOperator(value, row.operator, row.value);
+        }),
+      );
+    }
+
+    // Sắp xếp theo ID tăng dần
+    filtered.sort((a, b) => a.id.localeCompare(b.id));
+
+    return filtered;
+  };
+
+  const handleFilterSubmit = (values: { quickSearch: string; filters: FilterRowItem[] }) => {
+    setQuickSearch(values.quickSearch || '');
+    setFilterRows(values.filters || []);
+    setFilterDrawerOpen(false);
+    actionRef.current?.reload();
+  };
+
+  const handleClearFilters = () => {
+    setQuickSearch('');
+    setFilterRows([]);
+    setFilterDrawerOpen(false);
+    actionRef.current?.reload();
+  };
+
   return (
     <>
       <ProTable<ServiceItem>
         headerTitle={intl.formatMessage({ id: 'pages.service.title' })}
         actionRef={actionRef}
         rowKey="id"
-        search={{
-          labelWidth: 120,
-        }}
+        search={false}
         pagination={{
           showSizeChanger: true,
           pageSizeOptions: ['10', '20', '50', '100'],
           defaultPageSize: 10,
         }}
+        scroll={{ x: 'max-content', y: 'max-content' }}
         toolBarRender={() => [
+          <Input.Search
+            key="quickSearch"
+            placeholder={intl.formatMessage({ id: 'pages.service.quickSearchPlaceholder' }) || 'Tìm kiếm ID, căn hộ, tên...'}
+            allowClear
+            style={{ width: 320 }}
+            value={quickSearch}
+            onSearch={(value) => {
+              setQuickSearch(value);
+              actionRef.current?.reload();
+            }}
+            onChange={(e) => setQuickSearch(e.target.value)}
+          />,
+          <Button
+            key="filter"
+            type="default"
+            onClick={() => setFilterDrawerOpen(true)}
+          >
+            {intl.formatMessage({ id: 'components.advancedFilter.open' }) || 'Lọc nâng cao'}
+          </Button>,
+          <Button
+            key="clearFilters"
+            onClick={handleClearFilters}
+          >
+            {intl.formatMessage({ id: 'components.advancedFilter.clear' }) || 'Xóa bộ lọc'}
+          </Button>,
           <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             {intl.formatMessage({ id: 'pages.service.addNew' })}
           </Button>,
         ]}
         request={async () => {
           const data = await getServices();
+          setAllData(data);
+          const filteredData = filterData(data);
           return {
-            data,
+            data: filteredData,
             success: true,
           };
         }}
         columns={columns}
+      />
+
+      <AdvancedFilterDrawer
+        visible={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+        onApply={handleFilterSubmit}
+        onClear={handleClearFilters}
+        fields={filterFields}
+        quickSearchPlaceholder={intl.formatMessage({ id: 'Thông tin tìm kiếm' }) || 'Tìm kiếm ID, căn hộ, tên...'}
+        initialQuickSearch={quickSearch}
+        initialFilters={filterRows}
       />
 
       <Modal
@@ -220,7 +413,20 @@ export default () => {
             label={intl.formatMessage({ id: 'pages.service.apartment' })}
             rules={[{ required: true, message: intl.formatMessage({ id: 'pages.service.apartmentRequired' }) }]}
           >
-            <Input placeholder={intl.formatMessage({ id: 'pages.service.apartmentPlaceholder' })} />
+            <Select
+              showSearch
+              placeholder={intl.formatMessage({ id: 'pages.service.apartmentPlaceholder' })}
+              optionFilterProp="label"
+              filterOption={(input, option) =>
+                option?.label
+                  ? option.label.toString().toLowerCase().includes(input.toLowerCase())
+                  : false
+              }
+              options={apartments.map((item) => ({
+                label: item.code,
+                value: item.id,
+              }))}
+            />
           </Form.Item>
 
           <Form.Item

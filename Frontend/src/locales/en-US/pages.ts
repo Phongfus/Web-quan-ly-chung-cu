@@ -91,13 +91,35 @@ export default {
   'pages.dashboard.apartments': 'Apartments',
   'pages.dashboard.residents': 'Residents',
   'pages.dashboard.revenue': 'Revenue',
-  'pages.dashboard.maintenance': 'Maintenance',
+  'pages.dashboard.maintenance': 'Service Requests',
+  'pages.dashboard.summaryForMonth': 'Monthly summary',
+  'pages.dashboard.month': 'Month',
   'pages.dashboard.revenueChart': 'Revenue Chart',
+  'pages.dashboard.billChart': 'Bill Chart',
   'pages.dashboard.column': 'Column',
   'pages.dashboard.line': 'Line',
   'pages.dashboard.pie': 'Pie',
   'pages.dashboard.activities': 'Activities',
   'pages.dashboard.residentsByDay': 'Residents by Day',
+
+  'components.advancedFilter.title': 'Advanced Filter',
+  'components.advancedFilter.quickSearchPlaceholder': 'Search by ID or code',
+  'components.advancedFilter.addCondition': 'Add filter condition',
+  'components.advancedFilter.clearFilters': 'Clear filters',
+  'components.advancedFilter.apply': 'Apply',
+  'components.advancedFilter.open': 'Advanced Filter',
+  'components.advancedFilter.clear': 'Clear Filters',
+  'components.advancedFilter.valuePlaceholder': 'Value',
+  'components.advancedFilter.operator.eq': 'Equals',
+  'components.advancedFilter.operator.ne': 'Not equals',
+  'components.advancedFilter.operator.contains': 'Contains',
+  'components.advancedFilter.operator.notContains': 'Does not contain',
+  'components.advancedFilter.operator.gt': 'Greater than',
+  'components.advancedFilter.operator.lt': 'Less than',
+  'components.advancedFilter.operator.gte': 'Greater or equal',
+  'components.advancedFilter.operator.lte': 'Less or equal',
+  'components.advancedFilter.operator.isEmpty': 'Is empty',
+  'components.advancedFilter.operator.isNotEmpty': 'Is not empty',
 
   // ===== APARTMENT =====
   'pages.apartment.title': 'Apartment Management',
@@ -131,6 +153,11 @@ export default {
   'pages.apartment.typeIdPlaceholder': 'Enter type ID',
   'pages.apartment.areaPlaceholder': 'Enter area',
   'pages.apartment.statusPlaceholder': 'Select status',
+  'pages.apartment.quickSearchPlaceholder': 'Search by ID or code',
+  'pages.apartment.salePrice': 'Sale Price (VND)',
+  'pages.apartment.rentPrice': 'Rent Price (VND)',
+  'pages.apartment.salePricePlaceholder': 'Enter sale price',
+  'pages.apartment.rentPricePlaceholder': 'Enter rent price',
 
   // ===== RESIDENT =====
   'pages.resident.title': 'Resident Management',
@@ -168,6 +195,7 @@ export default {
   'pages.resident.apartmentRequired': 'Please select apartment',
   'pages.resident.apartmentPlaceholder': 'Enter apartment ID',
   'pages.resident.identityCardPlaceholder': 'Enter ID card number',
+  'pages.resident.quickSearchPlaceholder':'Search by ID, name, email...',
 
   // ===== BILL =====
   'pages.bill.title': 'Bill Management',
@@ -176,7 +204,7 @@ export default {
   'pages.bill.electricityFee': 'Electricity',
   'pages.bill.waterFee': 'Water',
   'pages.bill.serviceFee': 'Service Fee',
-  'pages.bill.totalAmount': 'Total Amount',
+  'pages.bill.totalAmount': 'Total Amount (VND)',
   'pages.bill.dueDate': 'Due Date',
   'pages.bill.status': 'Status',
   'pages.bill.status.paid': 'Paid',
@@ -209,6 +237,9 @@ export default {
   'pages.bill.amountPlaceholder': 'Enter total amount',
   'pages.bill.dueDateRequired': 'Please select due date',
   'pages.bill.statusPlaceholder': 'UNPAID or PAID',
+  'pages.bill.quickSearchPlaceholder': 'Search by apartment code',
+  'pages.common.total': 'Total',
+  'pages.common.index': 'No.',
 
   // ===== SERVICE =====
   'pages.service.title': 'Service Management',
@@ -246,4 +277,5 @@ export default {
   'pages.service.descriptionRequired': 'Please enter description',
   'pages.service.descriptionPlaceholder': 'Enter detailed description',
   'pages.service.statusPlaceholder': 'Select status',
+  'pages.service.quickSearchPlaceholder':'Search by ID, apartment, requester...',
 };

@@ -3,12 +3,12 @@ import { prisma } from "../../config/prisma";
 
 const generateApartmentId = (existingIds: string[]) => {
   const numbers = existingIds
-    .map((id) => id.match(/^CH(\d{3})$/))
+    .map((id) => id.match(/^CH(\d{4})$/))
     .filter((match): match is RegExpMatchArray => !!match)
     .map((match) => parseInt(match[1], 10));
 
   const nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
-  return `CH${nextNumber.toString().padStart(3, "0")}`;
+  return `CH${nextNumber.toString().padStart(4, "0")}`;
 };
 
 const parseOptionalFloat = (value: unknown) => {
