@@ -2,7 +2,6 @@ import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import { RightContent } from '@/components/RightContent';
 import { getIntl } from '@umijs/max';
 
-// Định nghĩa type cho InitialState
 type InitialState = {
   currentUser?: {
     id: string;
@@ -14,39 +13,61 @@ type InitialState = {
 };
 
 export async function getInitialState(): Promise<InitialState> {
+
   const token = localStorage.getItem('token');
 
   if (!token) {
+
     if (window.location.pathname !== '/user/login') {
       window.location.href = '/user/login';
     }
+
     return {};
+
   }
 
   try {
-    const res = await fetch('http://localhost:3001/api/auth/me', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+
+    const res = await fetch(
+
+      `${process.env.UMI_APP_API_URL}/auth/me`
+
+      ,
+
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+
+    );
 
     if (!res.ok) throw new Error('Invalid token');
 
     const user = await res.json();
 
     return { currentUser: user };
+
   } catch (error) {
+
     localStorage.removeItem('token');
+
     window.location.href = '/user/login';
+
     return {};
+
   }
+
 }
 
 export const request: RequestConfig = {
 
-  baseURL: "http://localhost:3001/api",
+  baseURL:
+    process.env.UMI_APP_API_URL ||
+    "http://localhost:3001/api",
 
   requestInterceptors: [
+
     (config:any)=>{
 
       const token = localStorage.getItem("token");
@@ -61,23 +82,34 @@ export const request: RequestConfig = {
       }
 
       return config;
+
     }
+
   ]
 
 };
 
-// Cấu hình layout runtime
+
+// layout config
+
 export const layout: RunTimeLayoutConfig = ({ initialState }) => {
-  console.log('Layout initialState:', initialState);
+
   return {
+
     title: getIntl().formatMessage({ id: 'app.title' }),
+
     rightContentRender: () => {
-      console.log('rightContentRender - currentUser:', initialState?.currentUser);
+
       if (!initialState?.currentUser) {
         return null;
       }
+
       return <RightContent />;
+
     },
+
     footerRender: () => null,
+
   };
+
 };
