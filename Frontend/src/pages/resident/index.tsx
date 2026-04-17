@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Tag, Modal, Form, Input, message, Switch, Select, Dropdown } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, MoreOutlined } from '@ant-design/icons';
+import { Button, Tag, Modal, Form, Input, message, Switch, Select } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useIntl, useModel } from '@umijs/max';
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
@@ -100,59 +100,27 @@ export default () => {
   : [
       {
         title: intl.formatMessage({ id: 'pages.resident.actions' }),
-
         valueType: 'option' as const,
-
-        width: 80,
-
-        render: (_: unknown, record: ResidentItem) => {
-
-          const actions = [
-            {
-              key:'edit',
-              label:(
-                <>
-                  <EditOutlined />
-                  {intl.formatMessage({ id: 'pages.resident.edit' })}
-                </>
-              ),
-              onClick:()=>handleEdit(record)
-            },
-            {
-              key:'delete',
-              danger:true,
-              label:(
-                <>
-                  <DeleteOutlined />
-                  {intl.formatMessage({ id: 'pages.resident.delete' })}
-                </>
-              ),
-              onClick:()=>handleDelete(record.id)
-            }
-          ]
-
-          return (
-            <Dropdown
-              trigger={['click']}
-              placement="bottomRight"
-              menu={{
-                items: actions.map(a=>({
-                  key:a.key,
-                  label:a.label,
-                  danger:a.danger,
-                  onClick:a.onClick
-                }))
-              }}
-            >
-              <Button
-                type="text"
-                icon={<MoreOutlined />}
-              />
-            </Dropdown>
-          )
-
-        }
-
+        width: 180,
+        render: (_: unknown, record: ResidentItem) => [
+          <Button
+            key="edit"
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
+            {intl.formatMessage({ id: 'pages.resident.edit' })}
+          </Button>,
+          <Button
+            key="delete"
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.id)}
+          >
+            {intl.formatMessage({ id: 'pages.resident.delete' })}
+          </Button>,
+        ],
       },
     ]),
   ];

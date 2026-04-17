@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ProTable, ActionType, ProColumns } from "@ant-design/pro-components";
-import { Button, Tag, Modal, Form, Input, InputNumber, Select, message, Table, Space, Dropdown } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, MoreOutlined } from "@ant-design/icons";
+import { Button, Tag, Modal, Form, Input, InputNumber, Select, message, Table, Space } from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useIntl, useModel } from "@umijs/max";
 
 import AdvancedFilterDrawer, {
@@ -244,59 +244,27 @@ export default () => {
   : [
       {
         title: intl.formatMessage({ id: 'pages.apartment.actions' }),
-
         valueType: 'option' as const,
-
-        width: 80,
-
-        render: (_: unknown, record: ApartmentItem) => {
-
-          const actions = [
-            {
-              key:'edit',
-              label:(
-                <>
-                  <EditOutlined />
-                  {intl.formatMessage({ id: 'pages.apartment.edit' })}
-                </>
-              ),
-              onClick:()=>handleEdit(record)
-            },
-            {
-              key:'delete',
-              danger:true,
-              label:(
-                <>
-                  <DeleteOutlined />
-                  {intl.formatMessage({ id: 'pages.apartment.delete' })}
-                </>
-              ),
-              onClick:()=>handleDelete(record.id)
-            }
-          ]
-
-          return (
-            <Dropdown
-              trigger={['click']}
-              placement="bottomRight"
-              menu={{
-                items: actions.map(a=>({
-                  key:a.key,
-                  label:a.label,
-                  danger:a.danger,
-                  onClick:a.onClick
-                }))
-              }}
-            >
-              <Button
-                type="text"
-                icon={<MoreOutlined />}
-              />
-            </Dropdown>
-          )
-
-        }
-
+        width: 180,
+        render: (_: unknown, record: ApartmentItem) => [
+          <Button
+            key="edit"
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
+            {intl.formatMessage({ id: 'pages.apartment.edit' })}
+          </Button>,
+          <Button
+            key="delete"
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.id)}
+          >
+            {intl.formatMessage({ id: 'pages.apartment.delete' })}
+          </Button>,
+        ],
       },
     ]),
   ];
