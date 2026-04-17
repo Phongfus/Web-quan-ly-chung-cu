@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../config/prisma";
 import { hashPassword } from "../../utils/hash";
+import { randomUUID } from "crypto";
 
 export const getUsers = async (req: Request, res: Response) => {
   const users = await prisma.user.findMany({
@@ -31,6 +32,7 @@ export const createResident = async (req: Request, res: Response) => {
 
       resident: {
         create: {
+          id: randomUUID(),
           apartment: {
             connect: {
               id: apartmentId
