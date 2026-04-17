@@ -10,6 +10,8 @@ import dashboardRoute from "./modules/dashboard/dashboard.route";
 import serviceRoute from "./modules/service/service.route";
 import residentRoute from "./modules/resident/resident.route";
 import billRoute from "./modules/bill/bill.route";
+import messageRoute from "./modules/message/message.route";
+import vehicleRoute from "./modules/vehicle/vehicle.route";
 
 import { errorHandler } from "./middleware/error.middleware";
 
@@ -26,7 +28,9 @@ app.use("/api/apartment-types", apartmentTypeRoute);
 app.use("/api/dashboard", dashboardRoute);
 app.use("/api/services", serviceRoute);
 app.use("/api/residents", residentRoute);
-app.use("/api/bills", billRoute); 
+app.use("/api/bills", billRoute);
+app.use("/api/vehicles", vehicleRoute);
+app.use("/api/messages", messageRoute); 
 
 app.get("/", (req, res) => {
   res.send("API running...");

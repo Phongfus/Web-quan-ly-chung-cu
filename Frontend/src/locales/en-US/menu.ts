@@ -15,6 +15,8 @@ export default {
   'menu.residents': 'Residents',
   'menu.bills': 'Bills',
   'menu.services': 'Services',
+  'menu.vehicles': 'Vehicles',
+  'menu.messages': 'Messages',
   'menu.settings': 'Settings',
   'menu.exception.403': '403',
   'menu.exception.404': '404',

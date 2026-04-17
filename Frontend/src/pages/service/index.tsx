@@ -2,24 +2,30 @@ import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Modal, Form, Input, Select, message, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
+import { useIntl, useModel } from '@umijs/max';
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
 } from '@/components/AdvancedFilterDrawer';
 import { getServices, createService, updateService, deleteService, ServiceItem } from '@/services/service';
 import { getApartments, ApartmentItem } from '@/services/apartment';
+import { getCurrentResident, ResidentItem } from '@/services/resident';
 
 const { TextArea } = Input;
 const { Option } = Select;
 
 export default () => {
   const intl = useIntl();
+  const { initialState } = useModel('@@initialState');
+  const currentUser = initialState?.currentUser;
+  const isResident = currentUser?.role === 'RESIDENT';
+  
   const actionRef = useRef<ActionType | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ServiceItem | null>(null);
   const [form] = Form.useForm();
   const [apartments, setApartments] = useState<ApartmentItem[]>([]);
+  const [currentResident, setCurrentResident] = useState<ResidentItem | null>(null);
   const [allData, setAllData] = useState<ServiceItem[]>([]);
   const [quickSearch, setQuickSearch] = useState<string>('');
   const [filterRows, setFilterRows] = useState<FilterRowItem[]>([]);
@@ -27,8 +33,18 @@ export default () => {
 
   const loadApartments = async () => {
     try {
-      const data = await getApartments();
-      setApartments(data);
+      if (isResident) {
+        const residentData = await getCurrentResident();
+        setCurrentResident(residentData);
+        setApartments([{
+          ...residentData.apartment,
+          createdAt: new Date().toISOString(),
+          status: residentData.apartment.status as "AVAILABLE" | "SOLD" | "RENTED" | "OCCUPIED" | "MAINTENANCE",
+        }]);
+      } else {
+        const data = await getApartments();
+        setApartments(data);
+      }
     } catch (error) {
       message.error('Không thể tải danh sách căn hộ');
     }
@@ -36,7 +52,7 @@ export default () => {
 
   useEffect(() => {
     loadApartments();
-  }, []);
+  }, [isResident]);
 
   const getServiceTypeText = (type: string) => {
     const typeMap: Record<string, string> = {
@@ -163,9 +179,30 @@ export default () => {
     },
   ];
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     setEditingRecord(null);
     form.resetFields();
+    
+    // Nếu là resident, đảm bảo đã load thông tin resident
+    if (isResident) {
+      if (!currentResident) {
+        try {
+          const residentData = await getCurrentResident();
+          setCurrentResident(residentData);
+        } catch (error) {
+          message.error('Không thể tải thông tin cư dân');
+          return;
+        }
+      }
+      
+      // Tự động điền apartmentId
+      if (currentResident) {
+        form.setFieldsValue({
+          apartmentId: currentResident.apartmentId,
+        });
+      }
+    }
+    
     setIsModalOpen(true);
   };
 
@@ -193,11 +230,18 @@ export default () => {
 
   const handleSubmit = async (values: any) => {
     try {
+      let submitValues = { ...values };
+      
+      // Nếu là resident khi tạo mới, không gửi apartmentId vì backend sẽ tự động lấy
+      if (!editingRecord && isResident) {
+        delete submitValues.apartmentId;
+      }
+      
       if (editingRecord) {
-        await updateService(editingRecord.id, values);
+        await updateService(editingRecord.id, submitValues);
         message.success(intl.formatMessage({ id: 'pages.service.updateSuccess' }));
       } else {
-        await createService(values);
+        await createService(submitValues);
         message.success(intl.formatMessage({ id: 'pages.service.createSuccess' }));
       }
       setIsModalOpen(false);
@@ -411,12 +455,13 @@ export default () => {
           <Form.Item
             name="apartmentId"
             label={intl.formatMessage({ id: 'pages.service.apartment' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.service.apartmentRequired' }) }]}
+            rules={[{ required: !isResident || !!editingRecord, message: intl.formatMessage({ id: 'pages.service.apartmentRequired' }) }]}
           >
             <Select
               showSearch
               placeholder={intl.formatMessage({ id: 'pages.service.apartmentPlaceholder' })}
               optionFilterProp="label"
+              disabled={isResident}
               filterOption={(input, option) =>
                 option?.label
                   ? option.label.toString().toLowerCase().includes(input.toLowerCase())
@@ -451,7 +496,7 @@ export default () => {
             <TextArea rows={4} placeholder={intl.formatMessage({ id: 'pages.service.descriptionPlaceholder' })} />
           </Form.Item>
 
-          {editingRecord && (
+          {editingRecord && !isResident && (
             <Form.Item name="status" label={intl.formatMessage({ id: 'pages.service.status' })}>
               <Select placeholder={intl.formatMessage({ id: 'pages.service.statusPlaceholder' })}>
                 <Option value="PENDING">{intl.formatMessage({ id: 'pages.service.status.pending' })}</Option>

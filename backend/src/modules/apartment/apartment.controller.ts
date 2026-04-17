@@ -52,18 +52,103 @@ export const createApartment = async (req: Request, res: Response) => {
   res.json(created);
 };
 
-export const getApartments = async (_: Request, res: Response) => {
-  const data = await prisma.apartment.findMany({
-    include: {
-      floor: true,
-      type: true,
-    },
-    orderBy: {
-      id: 'asc',
-    },
-  });
+export const getApartments = async (req: any, res: Response) => {
+  try {
+    const user = req.user;
+    
+    // If user is RESIDENT, show only their apartment and empty apartments
+    if (user?.role === 'RESIDENT') {
+      // Get resident info for this user
+      const resident = await prisma.resident.findUnique({
+        where: {
+          userId: user.id,
+        },
+      });
 
-  res.json(data);
+      if (!resident) {
+        // User is marked as RESIDENT but has no resident record
+        return res.json([]);
+      }
+
+      // Get user's apartment and all empty apartments
+      const data = await prisma.apartment.findMany({
+        where: {
+          OR: [
+            { id: resident.apartmentId }, // User's own apartment
+            {
+              residents: {
+                none: {}, // Empty apartments (no residents)
+              },
+            },
+          ],
+        },
+        include: {
+          floor: true,
+          type: true,
+          residents: {
+            select: {
+              id: true,
+            },
+          },
+        },
+        orderBy: {
+          id: 'asc',
+        },
+      });
+
+      return res.json(data);
+    }
+
+    // If ADMIN or other roles, show all apartments
+    const data = await prisma.apartment.findMany({
+      include: {
+        floor: true,
+        type: true,
+        residents: {
+          select: {
+            id: true,
+          },
+        },
+      },
+      orderBy: {
+        id: 'asc',
+      },
+    });
+
+    res.json(data);
+  } catch (error) {
+    console.error("Get apartments error:", error);
+    res.status(500).json({
+      message: "Không thể lấy danh sách căn hộ",
+    });
+  }
+};
+
+export const getAvailableApartments = async (_: Request, res: Response) => {
+  try {
+    // Lấy danh sách căn hộ chưa có cư dân liên kết
+    const data = await prisma.apartment.findMany({
+      where: {
+        residents: {
+          none: {}, // Không có residents nào
+        },
+      },
+      include: {
+        floor: true,
+        type: true,
+      },
+      orderBy: {
+        id: 'asc',
+      },
+    });
+
+    res.json(data);
+  } catch (error) {
+    console.error("Get available apartments error:", error);
+    res.status(500).json({
+      message: "Không thể lấy danh sách căn hộ có sẵn",
+    });
+  }
 };
 
 export const updateApartment = async (req: Request, res: Response) => {

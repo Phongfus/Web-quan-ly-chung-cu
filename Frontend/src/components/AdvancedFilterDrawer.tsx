@@ -174,10 +174,10 @@ export default function AdvancedFilterDrawer({
     <Drawer
       title={drawerTitle}
       placement="right"
-      width={560}
+      size={560}
       onClose={onClose}
       open={visible}
-      bodyStyle={{ paddingBottom: 24 }}
+      styles={{ body: { paddingBottom: 24 }}}
     >
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Input

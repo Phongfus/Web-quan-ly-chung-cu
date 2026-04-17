@@ -17,6 +17,8 @@ import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   SettingOutlined,
+  ClockCircleOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons';
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
@@ -60,26 +62,40 @@ const Dashboard = () => {
   const renderActivityItem = (item: string, index: number) => {
     let icon;
     let color = '#1890ff';
+    let label = item;
 
+    // Map text to translation keys
     if (item.includes('Cư dân mới')) {
       icon = <UserAddOutlined />;
       color = '#52c41a';
-    } else if (item.includes('Thanh toán thành công')) {
-      icon = <CheckCircleOutlined />;
-      color = '#52c41a';
+      label = intl.formatMessage({ id: 'pages.dashboard.activity.newResidents' }) + ': ' + item.split(': ')[1];
     } else if (item.includes('Yêu cầu sửa chữa')) {
       icon = <SettingOutlined />;
       color = '#faad14';
+      label = intl.formatMessage({ id: 'pages.dashboard.activity.maintenanceRequests' }) + ': ' + item.split(': ')[1];
+    } else if (item.includes('Hóa đơn đã thanh toán')) {
+      icon = <CheckCircleOutlined />;
+      color = '#52c41a';
+      label = intl.formatMessage({ id: 'pages.dashboard.activity.successfulPayment' }) + ': ' + item.split(': ')[1];
     } else if (item.includes('Hóa đơn chưa thanh toán')) {
+      icon = <ClockCircleOutlined />;
+      color = '#1890ff';
+      label = intl.formatMessage({ id: 'pages.dashboard.activity.unpaidBills' }) + ': ' + item.split(': ')[1];
+    } else if (item.includes('Hóa đơn sắp quá hạn')) {
       icon = <ExclamationCircleOutlined />;
-      color = '#ff4d4f';
+      color = '#fa8c16';
+      label = intl.formatMessage({ id: 'pages.dashboard.activity.upcomingOverdueBills' }) + ': ' + item.split(': ')[1];
+    } else if (item.includes('Hóa đơn quá hạn')) {
+      icon = <CloseCircleOutlined />;
+      color = '#cf1322';
+      label = intl.formatMessage({ id: 'pages.dashboard.activity.overdueBills' }) + ': ' + item.split(': ')[1];
     }
 
     return (
       <List.Item key={index}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ color, fontSize: '16px' }}>{icon}</span>
-          <span>{item}</span>
+          <span>{label}</span>
         </div>
       </List.Item>
     );
@@ -160,13 +176,13 @@ const Dashboard = () => {
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <div style={{ marginBottom: 16, textAlign: 'left' }}>
-            <h3 style={{ margin: 0, marginBottom: 8, color: '#000000' }}>Thống kê theo năm</h3>
+            <h3 style={{ margin: 0, marginBottom: 8, color: '#000000' }}>{intl.formatMessage({ id: 'pages.dashboard.statisticsByYear' })}</h3>
             <DatePicker
               picker="year"
               value={year}
               onChange={(v) => v && setYear(v)}
               style={{ width: 200 }}
-              placeholder="Chọn năm"
+              placeholder={intl.formatMessage({ id: 'pages.dashboard.selectYear' })}
             />
           </div>
         </Col>

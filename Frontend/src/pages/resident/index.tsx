@@ -1,17 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Tag, Modal, Form, Input, message, Switch, Select, Space } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
+import { Button, Tag, Modal, Form, Input, message, Switch, Select, Dropdown } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, MoreOutlined } from '@ant-design/icons';
+import { useIntl, useModel } from '@umijs/max';
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
 } from '@/components/AdvancedFilterDrawer';
 import { getResidents, createResident, updateResident, deleteResident, ResidentItem } from '@/services/resident';
-import { getApartments, ApartmentItem } from '@/services/apartment';
+import { getApartments, getAvailableApartments, ApartmentItem } from '@/services/apartment';
 
 export default () => {
   const intl = useIntl();
+  const { initialState } = useModel('@@initialState');
+  const currentUser = initialState?.currentUser;
+  const isResident = currentUser?.role === 'RESIDENT';
   const actionRef = useRef<ActionType | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ResidentItem | null>(null);
@@ -22,9 +25,11 @@ export default () => {
   const [filterRows, setFilterRows] = useState<FilterRowItem[]>([]);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
-  const loadApartments = async () => {
+  const loadApartments = async (isAddMode: boolean = true) => {
     try {
-      const data = await getApartments();
+      // Khi thêm cư dân mới, chỉ tải những căn hộ không có cư dân
+      // Khi sửa, tải tất cả các căn hộ
+      const data = isAddMode ? await getAvailableApartments() : await getApartments();
       setApartments(data);
     } catch (error) {
       message.error('Không thể tải danh sách căn hộ');
@@ -90,39 +95,78 @@ export default () => {
       valueType: 'dateTime',
       search: false,
     },
-    {
-      title: intl.formatMessage({ id: 'pages.resident.actions' }),
-      valueType: 'option',
-      render: (_, record) => [
-        <Button
-          key="edit"
-          type="link"
-          icon={<EditOutlined />}
-          onClick={() => handleEdit(record)}
-        >
-          {intl.formatMessage({ id: 'pages.resident.edit' })}
-        </Button>,
-        <Button
-          key="delete"
-          type="link"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleDelete(record.id)}
-        >
-          {intl.formatMessage({ id: 'pages.resident.delete' })}
-        </Button>,
-      ],
-    },
+...(isResident
+  ? []
+  : [
+      {
+        title: intl.formatMessage({ id: 'pages.resident.actions' }),
+
+        valueType: 'option' as const,
+
+        width: 80,
+
+        render: (_: unknown, record: ResidentItem) => {
+
+          const actions = [
+            {
+              key:'edit',
+              label:(
+                <>
+                  <EditOutlined />
+                  {intl.formatMessage({ id: 'pages.resident.edit' })}
+                </>
+              ),
+              onClick:()=>handleEdit(record)
+            },
+            {
+              key:'delete',
+              danger:true,
+              label:(
+                <>
+                  <DeleteOutlined />
+                  {intl.formatMessage({ id: 'pages.resident.delete' })}
+                </>
+              ),
+              onClick:()=>handleDelete(record.id)
+            }
+          ]
+
+          return (
+            <Dropdown
+              trigger={['click']}
+              placement="bottomRight"
+              menu={{
+                items: actions.map(a=>({
+                  key:a.key,
+                  label:a.label,
+                  danger:a.danger,
+                  onClick:a.onClick
+                }))
+              }}
+            >
+              <Button
+                type="text"
+                icon={<MoreOutlined />}
+              />
+            </Dropdown>
+          )
+
+        }
+
+      },
+    ]),
   ];
 
   const handleAdd = () => {
     setEditingRecord(null);
     form.resetFields();
+    loadApartments(true); // Tải căn hộ có sẵn
     setIsModalOpen(true);
   };
 
   const handleEdit = (record: ResidentItem) => {
     setEditingRecord(record);
+    loadApartments(false); // Tải tất cả căn hộ
     form.setFieldsValue({
       fullName: record.user?.fullName,
       phone: record.user?.phone,
@@ -327,9 +371,13 @@ export default () => {
           >
             {intl.formatMessage({ id: 'components.advancedFilter.clear' }) || 'Xóa bộ lọc'}
           </Button>,
-          <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            {intl.formatMessage({ id: 'pages.resident.addNew' })}
-          </Button>,
+          ...(isResident
+            ? []
+            : [
+                <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+                  {intl.formatMessage({ id: 'pages.resident.addNew' })}
+                </Button>,
+              ]),
         ]}
         request={async () => {
           const data = await getResidents();

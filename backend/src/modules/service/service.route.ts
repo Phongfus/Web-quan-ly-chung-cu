@@ -4,10 +4,16 @@ import { authMiddleware } from "../../middleware/auth.middleware";
 
 const router = Router();
 
-router.post("/", authMiddleware, controller.createService);
-router.get("/", authMiddleware, controller.getServices);
-router.get("/:id", authMiddleware, controller.getServiceById);
-router.put("/:id", authMiddleware, controller.updateService);
-router.delete("/:id", authMiddleware, controller.deleteService);
+// Tất cả routes cần authentication
+router.use(authMiddleware);
+
+// Routes chỉ cho admin
+router.post("/", controller.createService);
+router.put("/:id", controller.updateService);
+router.delete("/:id", controller.deleteService);
+
+// Routes cho cả admin và resident
+router.get("/", controller.getServices);
+router.get("/:id", controller.getServiceById);
 
 export default router;

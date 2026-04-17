@@ -16,10 +16,18 @@ export interface ApartmentItem {
   type?: {
     name: string;
   };
+
+  residents?: Array<{
+    id: string;
+  }>;
 }
 
 export const getApartments = async (): Promise<ApartmentItem[]> => {
   return request("/apartments");
+};
+
+export const getAvailableApartments = async (): Promise<ApartmentItem[]> => {
+  return request("/apartments/available");
 };
 
 export const getApartmentById = async (id: string): Promise<ApartmentItem> => {

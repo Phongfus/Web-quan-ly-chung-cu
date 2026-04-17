@@ -5,14 +5,16 @@ import { requireRole } from "../../middleware/role.middleware";
 
 const router = Router();
 
-// Tất cả routes đều cần authentication và role ADMIN
-router.use(authMiddleware, requireRole("ADMIN"));
+// Tất cả routes đều cần authentication
+router.use(authMiddleware);
 
+// Routes cho admin
+router.post("/", requireRole("ADMIN"), controller.createBill);
+router.put("/:id", requireRole(["ADMIN", "RESIDENT"]), controller.updateBill);
+router.delete("/:id", requireRole("ADMIN"), controller.deleteBill);
+
+// Routes cho cả admin và resident
 router.get("/", controller.getBills);
-router.get("/apartment/:apartmentId", controller.getBillsByApartment);
 router.get("/:id", controller.getBillById);
-router.post("/", controller.createBill);
-router.put("/:id", controller.updateBill);
-router.delete("/:id", controller.deleteBill);
 
 export default router;

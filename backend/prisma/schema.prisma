@@ -86,7 +86,7 @@ model Apartment {
 model Resident {
   id           String    @id
   userId       String    @unique
-  apartmentId  String
+  apartmentId  String    @unique
   identityCard String?
   dateOfBirth  DateTime?
   createdAt    DateTime  @default(now())
@@ -99,7 +99,7 @@ model Resident {
 }
 
 model Vehicle {
-  id           String      @id @default(uuid())
+  id           String      @id
   ownerId      String
   apartmentId  String
   type         VehicleType
@@ -151,13 +151,15 @@ model Bill {
 }
 
 model Payment {
-  id        String        @id @default(uuid())
-  billId    String
-  amount    Float
-  method    String
-  status    PaymentStatus @default(PENDING)
-  createdAt DateTime      @default(now())
-  bill      Bill          @relation(fields: [billId], references: [id])
+  id          String        @id @default(uuid())
+  billId      String
+  amount      Float
+  method      PaymentMethod
+  bankAccount String?
+  notes       String?
+  status      PaymentStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  bill        Bill          @relation(fields: [billId], references: [id])
 
   @@index([billId])
 }
@@ -167,6 +169,7 @@ model Conversation {
   user1Id   String
   user2Id   String
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   user1     User      @relation("User1", fields: [user1Id], references: [id])
   user2     User      @relation("User2", fields: [user2Id], references: [id])
   messages  Message[]
@@ -250,6 +253,8 @@ enum Role {
 enum BillStatus {
   UNPAID
   PAID
+  UPCOMING_OVERDUE
+  OVERDUE
 }
 
 enum RequestStatus {
@@ -289,4 +294,9 @@ enum PaymentStatus {
   PENDING
   SUCCESS
   FAILED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CASH
 }

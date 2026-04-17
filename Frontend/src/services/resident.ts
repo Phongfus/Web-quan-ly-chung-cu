@@ -28,6 +28,10 @@ export async function getResidents(): Promise<ResidentItem[]> {
   return request('/residents');
 }
 
+export async function getCurrentResident(): Promise<ResidentItem> {
+  return request('/residents/current');
+}
+
 export async function getResidentById(id: string): Promise<ResidentItem> {
   return request(`/residents/${id}`);
 }

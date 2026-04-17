@@ -13,6 +13,8 @@ export default {
   'menu.residents': 'Cư dân',
   'menu.bills': 'Hóa đơn',
   'menu.services': 'Dịch vụ',
+  'menu.vehicles': 'Phương tiện',
+  'menu.messages': 'Nhắn tin',
   'menu.settings': 'Cài đặt',
   'menu.exception.403': '403',
   'menu.exception.404': '404',

@@ -13,7 +13,7 @@ export const getDashboard = async (req: Request, res: Response) => {
     const endOfYear = currentYear.endOf('year').toDate();
 
     // ===== BASIC STATS =====
-    const [totalApartment, totalResident, totalRevenue, totalMaintenance, newResidents, paidPayments, unpaidBills] =
+    const [totalApartment, totalResident, totalRevenue, totalMaintenance, newResidents, paidBills, unpaidBills, upcomingOverdueBills, overdueBills] =
       await Promise.all([
         prisma.apartment.count(),
         prisma.resident.count(),
@@ -40,18 +40,27 @@ export const getDashboard = async (req: Request, res: Response) => {
             },
           },
         }),
-        prisma.payment.count({
+        prisma.bill.count({
           where: {
-            status: 'SUCCESS',
-            createdAt: {
-              gte: startOfYear,
-              lte: endOfYear,
-            },
+            status: 'PAID',
+            year: Number(year),
           },
         }),
         prisma.bill.count({
           where: {
             status: 'UNPAID',
+            year: Number(year),
+          },
+        }),
+        prisma.bill.count({
+          where: {
+            status: 'UPCOMING_OVERDUE',
+            year: Number(year),
+          },
+        }),
+        prisma.bill.count({
+          where: {
+            status: 'OVERDUE',
             year: Number(year),
           },
         }),
@@ -71,7 +80,7 @@ export const getDashboard = async (req: Request, res: Response) => {
     // ===== FORMAT 12 MONTHS =====
     const revenueData = Array.from({ length: 12 }).map((_, i) => {
       const m = i + 1;
-      const found = revenueRaw.find((r) => Number(r.month) === m);
+      const found = revenueRaw.find((r: any) => Number(r.month) === m);
 
       return {
         month: `T${m}`,
@@ -89,7 +98,7 @@ export const getDashboard = async (req: Request, res: Response) => {
       GROUP BY status
     `;
 
-    const billChartData = billData.map((item) => ({
+    const billChartData = billData.map((item: any) => ({
       type: item.status === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán',
       value: item.value,
     }));
@@ -109,9 +118,11 @@ export const getDashboard = async (req: Request, res: Response) => {
     // ===== ACTIVITIES =====
     const activities = [
       `Cư dân mới: ${newResidents}`,
-      `Thanh toán thành công: ${paidPayments}`,
       `Yêu cầu sửa chữa trong năm: ${totalMaintenance}`,
+      `Hóa đơn đã thanh toán: ${paidBills}`,
       `Hóa đơn chưa thanh toán: ${unpaidBills}`,
+      `Hóa đơn sắp quá hạn: ${upcomingOverdueBills}`,
+      `Hóa đơn quá hạn: ${overdueBills}`,
     ];
 
     res.json({

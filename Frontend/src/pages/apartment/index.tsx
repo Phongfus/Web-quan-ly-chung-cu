@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { ProTable, ActionType, ProColumns } from "@ant-design/pro-components";
-import { Button, Tag, Modal, Form, Input, InputNumber, Select, message, Table, Space } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import { useIntl } from "@umijs/max";
+import { Button, Tag, Modal, Form, Input, InputNumber, Select, message, Table, Space, Dropdown } from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined, MoreOutlined } from "@ant-design/icons";
+import { useIntl, useModel } from "@umijs/max";
 
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
@@ -23,6 +23,9 @@ const { Option } = Select;
 
 export default () => {
   const intl = useIntl();
+  const { initialState } = useModel('@@initialState');
+  const currentUser = initialState?.currentUser;
+  const isResident = currentUser?.role === 'RESIDENT';
   const actionRef = useRef<ActionType>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ApartmentItem | null>(null);
@@ -138,6 +141,18 @@ export default () => {
       width: 80,
     },
     {
+      title: intl.formatMessage({ id: 'pages.apartment.residentId' }),
+      dataIndex: ["residents", 0, "id"],
+      width: 120,
+      search: false,
+      render: (_, record) =>
+        record.residents && record.residents.length > 0
+          ? record.residents[0].id
+          : <span style={{ color: '#ccc' }}>
+              {intl.formatMessage({ id: 'pages.apartment.noResident' })}
+            </span>,
+    },
+    {
       title: intl.formatMessage({ id: 'pages.apartment.floor' }),
       dataIndex: ["floor", "number"],
       width: 60,
@@ -224,30 +239,66 @@ export default () => {
         </Tag>
       ),
     },
-    {
-      title: intl.formatMessage({ id: 'pages.apartment.actions' }),
-      valueType: "option",
-      width: 120,
-      render: (_, record) => [
-        <Button
-          key="edit"
-          type="link"
-          icon={<EditOutlined />}
-          onClick={() => handleEdit(record)}
-        >
-          {intl.formatMessage({ id: 'pages.apartment.edit' })}
-        </Button>,
-        <Button
-          key="delete"
-          type="link"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleDelete(record.id)}
-        >
-          {intl.formatMessage({ id: 'pages.apartment.delete' })}
-        </Button>,
-      ],
-    },
+...(isResident
+  ? []
+  : [
+      {
+        title: intl.formatMessage({ id: 'pages.apartment.actions' }),
+
+        valueType: 'option' as const,
+
+        width: 80,
+
+        render: (_: unknown, record: ApartmentItem) => {
+
+          const actions = [
+            {
+              key:'edit',
+              label:(
+                <>
+                  <EditOutlined />
+                  {intl.formatMessage({ id: 'pages.apartment.edit' })}
+                </>
+              ),
+              onClick:()=>handleEdit(record)
+            },
+            {
+              key:'delete',
+              danger:true,
+              label:(
+                <>
+                  <DeleteOutlined />
+                  {intl.formatMessage({ id: 'pages.apartment.delete' })}
+                </>
+              ),
+              onClick:()=>handleDelete(record.id)
+            }
+          ]
+
+          return (
+            <Dropdown
+              trigger={['click']}
+              placement="bottomRight"
+              menu={{
+                items: actions.map(a=>({
+                  key:a.key,
+                  label:a.label,
+                  danger:a.danger,
+                  onClick:a.onClick
+                }))
+              }}
+            >
+              <Button
+                type="text"
+                icon={<MoreOutlined />}
+              />
+            </Dropdown>
+          )
+
+        }
+
+      },
+    ]),
   ];
 
   const handleAdd = () => {
@@ -446,14 +497,16 @@ export default () => {
           >
             {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
           </Button>,
-          <Button
-            key="add"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleAdd}
-          >
-            {intl.formatMessage({ id: 'pages.apartment.addNew' })}
-          </Button>,
+          ...(isResident ? [] : [
+            <Button
+              key="add"
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleAdd}
+            >
+              {intl.formatMessage({ id: 'pages.apartment.addNew' })}
+            </Button>,
+          ]),
         ]}
         request={async () => {
           const data = await getApartments();
@@ -472,19 +525,19 @@ export default () => {
 
           return (
             <Table.Summary.Row style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5', position: 'sticky', bottom: 0, zIndex: 1 }}>
-              <Table.Summary.Cell index={0} colSpan={5}>
+              <Table.Summary.Cell index={0} colSpan={6}>
                 {intl.formatMessage({ id: 'pages.common.total' })}
               </Table.Summary.Cell>
-              <Table.Summary.Cell index={1}>
+              <Table.Summary.Cell index={6}>
                 {totalSalePrice > 0 ? `${totalSalePrice.toLocaleString('vi-VN')}` : '-'}
               </Table.Summary.Cell>
-              <Table.Summary.Cell index={2}>
+              <Table.Summary.Cell index={7}>
                 {totalRentPrice > 0 ? `${totalRentPrice.toLocaleString('vi-VN')}` : '-'}
               </Table.Summary.Cell>
-              <Table.Summary.Cell index={3}>
+              <Table.Summary.Cell index={8}>
                 {totalArea > 0 ? `${totalArea.toLocaleString('vi-VN')} m²` : '-'}
               </Table.Summary.Cell>
-              <Table.Summary.Cell index={4} colSpan={2}></Table.Summary.Cell>
+              <Table.Summary.Cell index={9} colSpan={2}></Table.Summary.Cell>
             </Table.Summary.Row>
           );
         }}

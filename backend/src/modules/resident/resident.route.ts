@@ -10,6 +10,7 @@ router.post("/", controller.createResident);
 
 // Tất cả routes khác đều cần authentication
 router.use(authMiddleware);
+router.get("/current", controller.getCurrentResident);
 router.get("/", controller.getResidents);
 router.get("/:id", controller.getResidentById);
 router.put("/:id", requireRole("ADMIN"), controller.updateResident);

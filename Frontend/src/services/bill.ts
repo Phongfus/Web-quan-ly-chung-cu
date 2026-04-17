@@ -10,9 +10,14 @@ export interface BillItem {
   month: number;
   year: number;
   dueDate: string;
-  status: 'UNPAID' | 'PAID';
+  status: 'UNPAID' | 'PAID' | 'UPCOMING_OVERDUE' | 'OVERDUE';
   createdAt: string;
   updatedAt: string;
+
+  // Payment fields for update operations
+  paymentMethod?: 'BANK_TRANSFER' | 'CASH';
+  bankAccount?: string;
+  notes?: string;
 
   apartment: {
     id: string;

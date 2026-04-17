@@ -3,10 +3,65 @@ import { prisma } from "../../config/prisma";
 import { hashPassword } from "../../utils/hash";
 import { generateNextResidentId } from "../../utils/resident-id";
 
-// Lấy danh sách cư dân
-export const getResidents = async (_req: Request, res: Response) => {
+// Lấy thông tin resident của user hiện tại
+export const getCurrentResident = async (req: any, res: Response) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const data = await prisma.resident.findUnique({
+      where: { userId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            phone: true,
+            isActive: true,
+          },
+        },
+        apartment: {
+          select: {
+            id: true,
+            code: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    if (!data) {
+      return res.status(404).json({
+        message: "Không tìm thấy thông tin cư dân",
+      });
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error("Get current resident error:", error);
+    res.status(500).json({
+      message: "Không thể lấy thông tin cư dân",
+    });
+  }
+};
+
+// Lấy danh sách cư dân
+export const getResidents = async (req: Request, res: Response) => {
+  try {
+    const userRole = (req as any).user?.role;
+    const userId = (req as any).user?.id;
+
+    let whereCondition = {};
+    if (userRole !== 'ADMIN') {
+      // Nếu không phải admin, chỉ lấy resident của user hiện tại
+      whereCondition = { userId: userId };
+    }
+
     const data = await prisma.resident.findMany({
+      where: whereCondition,
       include: {
         user: {
           select: {
@@ -94,6 +149,25 @@ export const createResident = async (req: Request, res: Response) => {
       });
     }
 
+    // Kiểm tra căn hộ có tồn tại
+    const apartment = await prisma.apartment.findUnique({
+      where: { id: apartmentId },
+      include: { residents: { select: { id: true } } },
+    });
+
+    if (!apartment) {
+      return res.status(404).json({
+        message: "Căn hộ không tồn tại",
+      });
+    }
+
+    // Kiểm tra căn hộ đã có cư dân chưa
+    if (apartment.residents.length > 0) {
+      return res.status(409).json({
+        message: "Căn hộ này đã có cư dân liên kết rồi",
+      });
+    }
+
     // Tạo user và resident trong một transaction
     const data = await prisma.$transaction(async (tx) => {
       const hashedPassword = await hashPassword(password);
@@ -175,11 +249,27 @@ export const updateResident = async (req: Request, res: Response) => {
       // Cập nhật thông tin user
       const resident = await tx.resident.findUnique({
         where: { id: String(id) },
-        select: { userId: true },
+        select: { userId: true, apartmentId: true },
       });
 
       if (!resident) {
         throw new Error("Resident not found");
+      }
+
+      // Nếu thay đổi căn hộ, kiểm tra căn hộ mới có trống không
+      if (apartmentId && apartmentId !== resident.apartmentId) {
+        const newApartment = await tx.apartment.findUnique({
+          where: { id: apartmentId },
+          include: { residents: { select: { id: true } } },
+        });
+
+        if (!newApartment) {
+          throw new Error("Căn hộ không tồn tại");
+        }
+
+        if (newApartment.residents.length > 0) {
+          throw new Error("Căn hộ này đã có cư dân liên kết rồi");
+        }
       }
 
       await tx.user.update({
@@ -223,10 +313,36 @@ export const updateResident = async (req: Request, res: Response) => {
     });
 
     res.json(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Update resident error:", error);
+    
+    // Xử lý các lỗi cụ thể
+    if (error.message === "Căn hộ này đã có cư dân liên kết rồi") {
+      return res.status(409).json({
+        message: "Căn hộ này đã có cư dân liên kết rồi",
+      });
+    }
+
+    if (error.message === "Căn hộ không tồn tại") {
+      return res.status(404).json({
+        message: "Căn hộ không tồn tại",
+      });
+    }
+
+    if (error.message === "Resident not found") {
+      return res.status(404).json({
+        message: "Không tìm thấy cư dân",
+      });
+    }
+
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        message: "Căn hộ này đã được liên kết với một cư dân khác",
+      });
+    }
+
     res.status(500).json({
-      message: "Không thể cập nhật cư dân",
+      message: error.message || "Không thể cập nhật cư dân",
     });
   }
 };

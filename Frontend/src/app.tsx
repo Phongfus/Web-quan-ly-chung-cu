@@ -79,13 +79,5 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
       return <RightContent />;
     },
     footerRender: () => null,
-    menuHeaderRender: undefined,
-    menuDataRender: (menuData) => {
-      const intl = getIntl();
-      return menuData.map(item => ({
-        ...item,
-        name: item.name ? intl.formatMessage({ id: item.name }) : item.name
-      }));
-    },
   };
 };
