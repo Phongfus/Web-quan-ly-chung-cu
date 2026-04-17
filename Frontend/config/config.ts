@@ -45,4 +45,6 @@ export default defineConfig({
   },
 
   fastRefresh: true,
+  esbuildMinifyIIFE: true,
+
 });
