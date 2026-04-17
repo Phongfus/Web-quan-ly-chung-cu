@@ -7,7 +7,7 @@
 
     "build": "max build",
 
-    "preview": "max preview --port $PORT",
+    "preview": "max preview --host 0.0.0.0 --port $PORT",
 
     "start": "npm run preview",
 
