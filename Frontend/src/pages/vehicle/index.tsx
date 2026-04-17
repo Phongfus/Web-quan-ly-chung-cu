@@ -468,14 +468,6 @@ export default () => {
               disabled
             />
           </Form.Item>
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                {editingRecord ? intl.formatMessage({ id: 'pages.vehicle.edit' }) : intl.formatMessage({ id: 'pages.vehicle.addNew' })}
-              </Button>
-              <Button onClick={handleCancel}>{intl.formatMessage({ id: 'pages.common.cancel' })}</Button>
-            </Space>
-          </Form.Item>
         </Form>
       </Modal>
 
