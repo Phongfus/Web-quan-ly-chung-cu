@@ -20,16 +20,18 @@ export default defineConfig({
   },
 
   antd: {},
+
   request: {
     dataField: '',
   },
 
   proxy: {
     '/api': {
-      target: 'http://localhost:3001',
+      target: process.env.UMI_APP_API_URL || 'http://localhost:3001',
       changeOrigin: true,
     },
   },
+
   model: {},
   initialState: {},
   access: {},
@@ -45,6 +47,9 @@ export default defineConfig({
   },
 
   fastRefresh: true,
+
   esbuildMinifyIIFE: true,
+  jsMinifier: 'esbuild',
+  mfsu: false,
 
 });
