@@ -99,7 +99,7 @@ model Resident {
 }
 
 model Vehicle {
-  id           String      @id
+  id           String      @id @default(uuid())
   ownerId      String
   apartmentId  String
   type         VehicleType
@@ -192,7 +192,7 @@ model Message {
 }
 
 model ServiceRequest {
-  id          String        @id
+  id          String        @id @default(uuid())
   userId      String
   apartmentId String
   
