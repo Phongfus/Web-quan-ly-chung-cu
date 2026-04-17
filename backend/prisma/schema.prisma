@@ -84,7 +84,7 @@ model Apartment {
 }
 
 model Resident {
-  id           String    @id
+  id           String    @id @default(uuid())
   userId       String    @unique
   apartmentId  String    @unique
   identityCard String?

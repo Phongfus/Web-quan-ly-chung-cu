@@ -17,7 +17,6 @@ export const getUsers = async (req: Request, res: Response) => {
   });
   res.json(users);
 };
-
 export const createResident = async (req: Request, res: Response) => {
   const { email, password, fullName, apartmentId } = req.body;
 
@@ -29,11 +28,17 @@ export const createResident = async (req: Request, res: Response) => {
       password: hashed,
       fullName,
       role: "RESIDENT",
+
       resident: {
         create: {
-          apartmentId,
-        },
-      },
+          apartment: {
+            connect: {
+              id: apartmentId
+            }
+          }
+        }
+      }
+
     },
   });
 
