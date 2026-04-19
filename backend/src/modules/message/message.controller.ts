@@ -166,9 +166,9 @@ export const createConversation = async (req: AuthRequest, res: Response) => {
     return res.status(400).json({ message: "Other user ID is required" });
   }
 
-  // Only admin can create conversations
-  if (user.role !== "ADMIN") {
-    return res.status(403).json({ message: "Only admin can create conversations" });
+  // cho phép cả ADMIN và RESIDENT tạo conversation
+  if (!["ADMIN","RESIDENT"].includes(user.role)) {
+    return res.status(403).json({ message: "Access denied" });
   }
 
   try {

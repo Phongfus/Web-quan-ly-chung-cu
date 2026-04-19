@@ -35,7 +35,11 @@ export default () => {
   const loadUsers = async () => {
     try {
       const data = await getUsers();
-      setUsers(data.filter(user => user.role === 'RESIDENT'));
+      // Nếu là cư dân, cho phép chat với admin/staff; nếu không thì chat với cư dân
+      const filteredUsers = currentUser?.role === 'RESIDENT' 
+        ? data.filter(user => user.role !== 'RESIDENT' && user.id !== currentUser?.id)
+        : data.filter(user => user.role === 'RESIDENT');
+      setUsers(filteredUsers);
     } catch (error) {
       message.error(intl.formatMessage({ id: 'pages.message.loadUsersError' }));
     }
@@ -44,7 +48,7 @@ export default () => {
   useEffect(() => {
     loadConversations();
     loadUsers();
-  }, []);
+  }, [currentUser]);
 
   const handleConversationClick = async (conversation: ConversationItem) => {
     setSelectedConversation(conversation);

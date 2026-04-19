@@ -3,20 +3,51 @@ import { prisma } from "../../config/prisma";
 import { hashPassword } from "../../utils/hash";
 import { randomUUID } from "crypto";
 
-export const getUsers = async (req: Request, res: Response) => {
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      email: true,
-      fullName: true,
-      phone: true,
-      role: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-  res.json(users);
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    role: string;
+  };
+}
+
+export const getUsers = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+
+  if (!user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  // ADMIN thấy danh sách cư dân
+  if (user.role === "ADMIN") {
+    const residents = await prisma.user.findMany({
+      where: { role: "RESIDENT" },
+      select: {
+        id: true,
+        fullName: true,
+        phone: true,
+        role: true
+      }
+    });
+
+    return res.json(residents);
+  }
+
+  // RESIDENT chỉ thấy admin để chat
+  if (user.role === "RESIDENT") {
+    const admins = await prisma.user.findMany({
+      where: { role: "ADMIN" },
+      select: {
+        id: true,
+        fullName: true,
+        phone: true,
+        role: true
+      }
+    });
+
+    return res.json(admins);
+  }
+
+  return res.status(403).json({ message: "Access denied" });
 };
 export const createResident = async (req: Request, res: Response) => {
   const { email, password, fullName, apartmentId } = req.body;
