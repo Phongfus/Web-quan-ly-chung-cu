@@ -11,6 +11,8 @@ export default {
   'menu.dashboard': 'Trang chủ',
   'menu.apartments': 'Căn hộ',
   'menu.residents': 'Cư dân',
+  'menu.complaints': 'Khiếu nại',
+  'menu.notifications': 'Thông báo',
   'menu.bills': 'Hóa đơn',
   'menu.services': 'Dịch vụ',
   'menu.vehicles': 'Phương tiện',

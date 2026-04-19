@@ -14,6 +14,10 @@ export const login = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "User not found" });
   }
 
+  if (!user.isActive) {
+    return res.status(403).json({ message: "Account is deactivated" });
+  }
+
   const isValid = await comparePassword(password, user.password);
 
   if (!isValid) {

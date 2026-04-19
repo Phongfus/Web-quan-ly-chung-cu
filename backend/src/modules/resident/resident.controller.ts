@@ -140,12 +140,19 @@ export const getResidentById = async (req: Request, res: Response) => {
 // Tạo cư dân mới
 export const createResident = async (req: Request, res: Response) => {
   try {
-    const { email, password, fullName, phone, apartmentId, identityCard, dateOfBirth } = req.body;
+    const { email, password, fullName, phone, apartmentId, identityCard, dateOfBirth, apartmentStatus } = req.body;
 
     // Kiểm tra dữ liệu bắt buộc
     if (!email || !password || !fullName || !apartmentId) {
       return res.status(400).json({
         message: "Thiếu dữ liệu bắt buộc: email, password, fullName, apartmentId",
+      });
+    }
+
+    // Kiểm tra apartmentStatus hợp lệ
+    if (!apartmentStatus || !['RENTED', 'SOLD'].includes(apartmentStatus)) {
+      return res.status(400).json({
+        message: "Trạng thái căn hộ không hợp lệ. Chỉ chấp nhận RENTED hoặc SOLD",
       });
     }
 
@@ -213,6 +220,12 @@ export const createResident = async (req: Request, res: Response) => {
         },
       });
 
+      // Cập nhật trạng thái căn hộ
+      await tx.apartment.update({
+        where: { id: apartmentId },
+        data: { status: apartmentStatus },
+      });
+
       return resident;
     });
 
@@ -243,7 +256,7 @@ export const createResident = async (req: Request, res: Response) => {
 export const updateResident = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const { fullName, phone, apartmentId, identityCard, dateOfBirth, isActive } = req.body;
+    const { fullName, phone, apartmentId, identityCard, dateOfBirth, isActive, apartmentStatus } = req.body;
 
     const data = await prisma.$transaction(async (tx) => {
       // Cập nhật thông tin user
@@ -308,6 +321,14 @@ export const updateResident = async (req: Request, res: Response) => {
           },
         },
       });
+
+      // Cập nhật trạng thái căn hộ nếu có
+      if (apartmentStatus && apartmentId) {
+        await tx.apartment.update({
+          where: { id: apartmentId },
+          data: { status: apartmentStatus },
+        });
+      }
 
       return updatedResident;
     });

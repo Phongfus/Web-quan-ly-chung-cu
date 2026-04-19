@@ -48,6 +48,18 @@
     component: './message',
   },
   {
+    path: '/notifications',
+    name: 'notifications',
+    icon: 'BellOutlined',
+    component: './notification',
+  },
+  {
+    path: '/complaints',
+    name: 'complaints',
+    icon: 'ExclamationCircleOutlined',
+    component: './complaint',
+  },
+  {
     path: '/settings',
     name: 'settings',
     icon: 'SettingOutlined',

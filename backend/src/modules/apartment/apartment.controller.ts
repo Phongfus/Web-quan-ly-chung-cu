@@ -88,6 +88,11 @@ export const getApartments = async (req: any, res: Response) => {
           residents: {
             select: {
               id: true,
+              user: {
+                select: {
+                  fullName: true,
+                },
+              },
             },
           },
         },
@@ -107,6 +112,11 @@ export const getApartments = async (req: any, res: Response) => {
         residents: {
           select: {
             id: true,
+            user: {
+              select: {
+                fullName: true,
+              },
+            },
           },
         },
       },

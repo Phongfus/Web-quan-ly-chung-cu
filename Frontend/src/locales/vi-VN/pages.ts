@@ -126,6 +126,22 @@ export default {
   'pages.message.updateError':'Không thể cập nhật tin nhắn',
 
 
+  // ===== COMPLAINT =====
+  'pages.complaint.title': 'Quản lý khiếu nại',
+  'pages.complaint.addNew': 'Thêm khiếu nại',
+  'pages.complaint.edit': 'Sửa',
+  'pages.complaint.delete': 'Xóa',
+  'pages.complaint.deleteConfirm': 'Xác nhận xóa',
+  'pages.complaint.deleteContent': 'Bạn có chắc muốn xóa khiếu nại này?',
+  'pages.complaint.deleteSuccess': 'Xóa khiếu nại thành công',
+  'pages.complaint.deleteError': 'Xóa khiếu nại thất bại',
+  'pages.complaint.createSuccess': 'Tạo khiếu nại thành công',
+  'pages.complaint.updateSuccess': 'Cập nhật khiếu nại thành công',
+  'pages.complaint.actionError': 'Có lỗi xảy ra',
+  'pages.complaint.addTitle': 'Thêm khiếu nại',
+  'pages.complaint.editTitle': 'Sửa khiếu nại',
+  'pages.complaint.quickSearchPlaceholder': 'Tìm kiếm ID, tiêu đề, nội dung...',
+
   // ===== DASHBOARD =====
   'pages.dashboard.noData': 'Không có dữ liệu',
   'pages.dashboard.apartments': 'Căn hộ',

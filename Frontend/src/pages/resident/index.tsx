@@ -139,6 +139,7 @@ export default () => {
       fullName: record.user?.fullName,
       phone: record.user?.phone,
       apartmentId: record.apartment?.id,
+      apartmentStatus: record.apartment?.status,
       identityCard: record.identityCard,
       isActive: record.user?.isActive,
     });
@@ -432,7 +433,23 @@ export default () => {
                 label: item.code,
                 value: item.id,
               }))}
+              onChange={(value) => {
+                const selectedApartment = apartments.find((a) => a.id === value);
+                if (selectedApartment && selectedApartment.status) {
+                  form.setFieldValue('apartmentStatus', selectedApartment.status);
+                }
+              }}
             />
+          </Form.Item>
+          <Form.Item
+            name="apartmentStatus"
+            label="Trạng thái căn hộ"
+            rules={[{ required: !editingRecord, message: 'Vui lòng chọn trạng thái căn hộ' }]}
+          >
+            <Select placeholder="Chọn trạng thái căn hộ">
+              <Select.Option value="RENTED">Thuê nhà</Select.Option>
+              <Select.Option value="SOLD">Nhà mua</Select.Option>
+            </Select>
           </Form.Item>
           <Form.Item
             name="identityCard"

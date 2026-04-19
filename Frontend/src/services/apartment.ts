@@ -19,6 +19,9 @@ export interface ApartmentItem {
 
   residents?: Array<{
     id: string;
+    user: {
+      fullName: string;
+    };
   }>;
 }
 

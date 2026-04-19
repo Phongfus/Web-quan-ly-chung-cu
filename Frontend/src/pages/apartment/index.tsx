@@ -105,6 +105,7 @@ export default () => {
     },
     { key: 'floorNumber', label: intl.formatMessage({ id: 'pages.apartment.floor' }), type: 'number' },
     { key: 'typeName', label: intl.formatMessage({ id: 'pages.apartment.type' }), type: 'text' },
+    { key: 'residentName', label: 'Tên chủ hộ', type: 'text' },
     { key: 'salePrice', label: intl.formatMessage({ id: 'pages.apartment.salePrice' }), type: 'number' },
     { key: 'rentPrice', label: intl.formatMessage({ id: 'pages.apartment.rentPrice' }), type: 'number' },
     { key: 'area', label: intl.formatMessage({ id: 'pages.apartment.area' }), type: 'number' },
@@ -116,6 +117,8 @@ export default () => {
         return item.floor?.number;
       case 'typeName':
         return item.type?.name;
+      case 'residentName':
+        return item.residents && item.residents.length > 0 ? item.residents[0].user.fullName : '';
       default:
         return (item as any)[field];
     }
@@ -148,6 +151,18 @@ export default () => {
       render: (_, record) =>
         record.residents && record.residents.length > 0
           ? record.residents[0].id
+          : <span style={{ color: '#ccc' }}>
+              {intl.formatMessage({ id: 'pages.apartment.noResident' })}
+            </span>,
+    },
+    {
+      title: "Tên chủ hộ",
+      dataIndex: ["residents", 0, "user", "fullName"],
+      width: 120,
+      search: false,
+      render: (_, record) =>
+        record.residents && record.residents.length > 0
+          ? record.residents[0].user.fullName
           : <span style={{ color: '#ccc' }}>
               {intl.formatMessage({ id: 'pages.apartment.noResident' })}
             </span>,
@@ -493,7 +508,7 @@ export default () => {
 
           return (
             <Table.Summary.Row style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5', position: 'sticky', bottom: 0, zIndex: 1 }}>
-              <Table.Summary.Cell index={0} colSpan={6}>
+              <Table.Summary.Cell index={0} colSpan={7}>
                 {intl.formatMessage({ id: 'pages.common.total' })}
               </Table.Summary.Cell>
               <Table.Summary.Cell index={6}>

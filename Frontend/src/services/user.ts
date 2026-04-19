@@ -12,5 +12,10 @@ export interface UserItem {
 }
 
 export async function getUsers(): Promise<UserItem[]> {
-  return request('/user');
+  const result = await request('/user');
+  if (Array.isArray(result)) {
+    return result;
+  }
+
+  return (result as any)?.data ?? [];
 }
