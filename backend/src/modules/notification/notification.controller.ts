@@ -250,7 +250,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
     });
 
     res.json({
-      count,
+      unreadNotifications: count,
     });
   } catch (error: any) {
     console.error("Get unread count error:", error);

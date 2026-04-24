@@ -1,7 +1,6 @@
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import { getIntl, history } from '@umijs/max';
-import { AppstoreOutlined, MessageOutlined, BellOutlined, SettingOutlined } from '@ant-design/icons';
-import { Badge } from 'antd';
+import { getIntl } from '@umijs/max';
+import Actions from '@/components/Actions';
 
 type InitialState = {
   currentUser?: {
@@ -12,6 +11,7 @@ type InitialState = {
     avatar?: string;
   };
   settings?: Record<string, any>;
+  unreadNotifications?: number;
 };
 
 export async function getInitialState(): Promise<InitialState> {
@@ -48,7 +48,23 @@ export async function getInitialState(): Promise<InitialState> {
 
     const user = await res.json();
 
-    return { currentUser: user };
+    // Fetch unread notifications count
+    const unreadRes = await fetch(
+      `${process.env.UMI_APP_API_URL}/notifications/unread-count`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    let unreadNotifications = 0;
+    if (unreadRes.ok) {
+      const unreadData = await unreadRes.json();
+      unreadNotifications = unreadData.unreadNotifications || 0;
+    }
+
+    return { currentUser: user, unreadNotifications };
 
   } catch (error) {
 
@@ -94,107 +110,13 @@ export const request: RequestConfig = {
 
 export const layout: RunTimeLayoutConfig = ({ initialState }) => {
 
-  const actionIconStyle = {
-    width: 30,
-    height: 30,
-    borderRadius: ' 50%',
-    background: '#ececec',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'background-color 0.15s ease',
-  };
-
   return {
 
     title: getIntl().formatMessage({ id: 'app.title' }),
 
     layout: 'mix',
 
-    actionsRender: () => [
-      <Badge key="appstore" color="#1890ff" size="small" style={{ zIndex: 1 }}>
-        <div
-          style={{
-            ...actionIconStyle,
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#e4e6eb';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#f0f2f5';
-          }}
-          onClick={() => history.push('/')}
-        >
-          <AppstoreOutlined style={{ fontSize: 18, color: '#1890ff' }} />
-        </div>
-      </Badge>,
-      <Badge
-        key="message"
-        count={5}
-        size="small"
-        offset={[-4, 8]}
-        overflowCount={99}
-        style={{ backgroundColor: '#ff0004', color: '#fff', zIndex: 1 }}
-      >
-        <div
-          style={{
-            ...actionIconStyle,
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#e4e6eb';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#f0f2f5';
-          }}
-          onClick={() => history.push('/messages')}
-        >
-          <MessageOutlined style={{ fontSize: 18, color: '#fa8c16' }} />
-        </div>
-      </Badge>,
-      <Badge
-        key="bell"
-        count={12}
-        size="small"
-        offset={[-4, 8]}
-        overflowCount={99}
-        style={{ backgroundColor: '#ff0004', color: '#fff', zIndex: 1 }}
-      >
-        <div
-          style={{
-            ...actionIconStyle,
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#e4e6eb';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#f0f2f5';
-          }}
-          onClick={() => history.push('/notifications')}
-        >
-          <BellOutlined style={{ fontSize: 18, color: '#ff4d4f' }} />
-        </div>
-      </Badge>,
-      <Badge key="settings" color="#8c8c8c" size="small" style={{ zIndex: 1 }}>
-        <div
-          style={{
-            ...actionIconStyle,
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#e4e6eb';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#f0f2f5';
-          }}
-          onClick={() => history.push('/settings')}
-        >
-          <SettingOutlined style={{ fontSize: 18, color: '#000000' }} />
-        </div>
-      </Badge>,
-    ],
+    actionsRender: () => [<Actions unreadNotifications={initialState?.unreadNotifications} key="actions" />],
 
     avatarProps: {
       src: initialState?.currentUser?.avatar,

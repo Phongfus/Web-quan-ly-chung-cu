@@ -208,6 +208,37 @@ export const createConversation = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const getUnreadCount = async (req: AuthRequest, res: Response) => {
+  const user = req.user;
+
+  if (!user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const count = await prisma.conversation.count({
+      where: {
+        OR: [
+          { user1Id: user.id },
+          { user2Id: user.id },
+        ],
+        messages: {
+          some: {
+            isRead: false,
+            senderId: {
+              not: user.id,
+            },
+          },
+        },
+      },
+    });
+
+    res.json({ count });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching unread conversation count" });
+  }
+};
+
 export const updateMessage = async (req: AuthRequest, res: Response) => {
   const messageId = req.params.messageId as string;
   const { content } = req.body;

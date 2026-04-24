@@ -8,6 +8,7 @@ import {
   updateMessage,
   deleteMessage,
   deleteConversation,
+  getUnreadCount,
 } from "./message.controller";
 
 const router = Router();
@@ -15,6 +16,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/conversations", getConversations);
+router.get("/unread-count", getUnreadCount);
 router.post("/conversations", createConversation);
 router.delete("/conversations/:conversationId", deleteConversation);
 router.get("/conversations/:conversationId/messages", getMessages);

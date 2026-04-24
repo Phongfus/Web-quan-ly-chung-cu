@@ -49,6 +49,10 @@ export async function getConversations(): Promise<ConversationItem[]> {
   return request('/messages/conversations');
 }
 
+export async function getUnreadCount(): Promise<{ count: number }> {
+  return request('/messages/unread-count');
+}
+
 export async function getMessages(conversationId: string): Promise<MessageItem[]> {
   return request(`/messages/conversations/${conversationId}/messages`);
 }
