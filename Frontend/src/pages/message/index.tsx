@@ -78,6 +78,7 @@ export default () => {
       const msgs = await getMessages(conversation.id);
       setMessages(msgs);
       await loadConversations();
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (error) {
       message.error( intl.formatMessage({ id: 'pages.message.loadMessagesError' }));
     }
@@ -186,7 +187,7 @@ export default () => {
   };
 
   const getOtherUser = (conversation: LocalConversationItem) => {
-    if (!conversation?.user1 || !conversation?.user2) {
+    if (!conversation?.user1 || !conversation?.user2 || !currentUser) {
       return {
         id: "",
         fullName: intl.formatMessage({ id: 'pages.common.user' }),
@@ -195,9 +196,9 @@ export default () => {
       };
     }
 
-    return conversation.user1.role === "RESIDENT"
-      ? conversation.user1
-      : conversation.user2;
+    return conversation.user1.id === currentUser.id
+      ? conversation.user2
+      : conversation.user1;
   };
 
   const usersWithoutConversation = users.filter(
