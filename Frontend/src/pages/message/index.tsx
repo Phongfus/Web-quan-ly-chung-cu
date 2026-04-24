@@ -8,12 +8,14 @@ import { getUsers, UserItem } from '@/services/user';
 
 const { TextArea } = Input;
 
+type LocalConversationItem = ConversationItem & { hasUnread: boolean };
+
 export default () => {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
-  const [conversations, setConversations] = useState<ConversationItem[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<ConversationItem | null>(null);
+  const [conversations, setConversations] = useState<LocalConversationItem[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<LocalConversationItem | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,10 +25,26 @@ export default () => {
   const [editingContent, setEditingContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const getLatestConversationMessage = (messages?: ConversationItem['messages']) => {
+    if (!messages || messages.length === 0) return undefined;
+    return messages.reduce((latest, current) => {
+      return new Date(current.createdAt) > new Date(latest.createdAt) ? current : latest;
+    }, messages[0]);
+  };
+
   const loadConversations = async () => {
     try {
       const data = await getConversations();
-      setConversations(data);
+      const localData: LocalConversationItem[] = data.map(conv => {
+        const latestMessage = getLatestConversationMessage(conv.messages);
+        const isFromOther = latestMessage?.senderId !== currentUser?.id;
+
+        return {
+          ...conv,
+          hasUnread: !!latestMessage && isFromOther && latestMessage?.isRead === false,
+        };
+      });
+      setConversations(localData);
     } catch (error) {
       message.error( intl.formatMessage({ id: 'pages.message.loadConversationError' }));
     }
@@ -48,14 +66,18 @@ export default () => {
   useEffect(() => {
     loadConversations();
     loadUsers();
+    // Reload conversations every 30 seconds to update unread status
+    const interval = setInterval(loadConversations, 30000);
+    return () => clearInterval(interval);
   }, [currentUser]);
 
-  const handleConversationClick = async (conversation: ConversationItem) => {
+  const handleConversationClick = async (conversation: LocalConversationItem) => {
     setSelectedConversation(conversation);
     setIsModalOpen(true);
     try {
       const msgs = await getMessages(conversation.id);
       setMessages(msgs);
+      await loadConversations();
     } catch (error) {
       message.error( intl.formatMessage({ id: 'pages.message.loadMessagesError' }));
     }
@@ -68,6 +90,7 @@ export default () => {
       const msg = await sendMessage(selectedConversation.id, newMessage.trim());
       setMessages(prev => [...prev, msg]);
       setNewMessage('');
+      await loadConversations();
       // Scroll to bottom
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (error) {
@@ -78,7 +101,7 @@ export default () => {
   const handleCreateConversation = async (userId: string) => {
     try {
       const conv = await createConversation(userId);
-      setConversations(prev => [conv, ...prev]);
+      setConversations(prev => [{ ...conv, hasUnread: false }, ...prev]);
       setIsCreateModalOpen(false);
       message.success( intl.formatMessage({ id: 'pages.message.createSuccess' }));
     } catch (error) {
@@ -162,7 +185,7 @@ export default () => {
     });
   };
 
-  const getOtherUser = (conversation: ConversationItem) => {
+  const getOtherUser = (conversation: LocalConversationItem) => {
     if (!conversation?.user1 || !conversation?.user2) {
       return {
         id: "",
@@ -208,7 +231,13 @@ export default () => {
             return (
               <List.Item
                 onClick={() => handleConversationClick(conversation)}
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: 'pointer',
+                  backgroundColor: conversation.hasUnread ? '#e6f7ff' : 'transparent',
+                  borderRadius: 10,
+                  padding: '12px 16px',
+                  marginBottom: 8,
+                }}
                 extra={
                   <Dropdown menu={{ items: menuItems }} trigger={['click']}>
                     <Button
@@ -221,7 +250,7 @@ export default () => {
               >
                 <List.Item.Meta
                   avatar={<Avatar>{otherUser?.fullName?.[0] || "U"}</Avatar>}
-                  title={otherUser?.fullName || intl.formatMessage({ id: 'pages.common.user' })}
+                  title={<span style={{ fontWeight: conversation.hasUnread ? 'bold' : 'normal', color: conversation.hasUnread ? '#1890ff' : 'inherit' }}>{otherUser?.fullName || intl.formatMessage({ id: 'pages.common.user' })}</span>}
                   description={lastMessage?.content || intl.formatMessage({ id: 'pages.message.noMessage' })}
                 />
               </List.Item>

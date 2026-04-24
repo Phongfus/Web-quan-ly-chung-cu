@@ -33,10 +33,10 @@ export const getConversations = async (req: AuthRequest, res: Response) => {
           messages: {
             orderBy: { createdAt: "desc" },
             take: 1, // Last message
-            select: { content: true, createdAt: true },
+            select: { id: true, senderId: true, content: true, createdAt: true, isRead: true },
           },
         },
-        orderBy: { updatedAt: "desc" }, // Assuming we add updatedAt to Conversation
+        orderBy: { updatedAt: "desc" },
       });
     } else if (user.role === "RESIDENT") {
       // Resident sees only conversation with admin
@@ -53,7 +53,7 @@ export const getConversations = async (req: AuthRequest, res: Response) => {
           messages: {
             orderBy: { createdAt: "desc" },
             take: 1,
-            select: { content: true, createdAt: true },
+            select: { id: true, senderId: true, content: true, createdAt: true, isRead: true },
           },
         },
       });
@@ -93,6 +93,15 @@ export const getMessages = async (req: AuthRequest, res: Response) => {
     if (conversation.user1Id !== user.id && conversation.user2Id !== user.id) {
       return res.status(403).json({ message: "Access denied" });
     }
+
+    await prisma.message.updateMany({
+      where: {
+        conversationId,
+        senderId: { not: user.id },
+        isRead: false,
+      },
+      data: { isRead: true },
+    });
 
     const messages = await prisma.message.findMany({
       where: { conversationId },

@@ -5,6 +5,7 @@ export interface MessageItem {
   conversationId: string;
   senderId: string;
   content: string;
+  isRead?: boolean;
   createdAt: string;
   sender: {
     id: string;
@@ -31,8 +32,16 @@ export interface ConversationItem {
     phone?: string;
   };
   messages: {
+    id?: string;
+    conversationId?: string;
+    senderId: string;
     content: string;
+    isRead?: boolean;
     createdAt: string;
+    sender?: {
+      id: string;
+      fullName: string;
+    };
   }[];
 }
 
