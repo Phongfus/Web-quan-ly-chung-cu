@@ -42,7 +42,7 @@ type DashboardData = {
   residentData?: { day: string; value: number }[];
   costData?: { month: string; type: string; value: number }[];
   billChartData: { type: string; value: number }[];
-  activities: string[];
+  activities: Array<{ key: string; count: number }>;
   notifications?: Array<{
     id: string;
     title: string;
@@ -84,57 +84,54 @@ const Dashboard = () => {
       .finally(() => setLoading(false));
   }, [year]);
 
-  const getActivityValue = (label: string) => {
-    const activity = data?.activities?.find((item) => item.includes(label));
-    if (!activity) return 0;
-    const parts = activity.split(':');
-    return parts.length > 1 ? Number(parts[1].trim()) : 0;
+  const getActivityValue = (key: string) => {
+    const activity = data?.activities?.find((item) => item.key === key);
+    return activity?.count || 0;
   };
 
   const activityList = () => {
     if (!data) return [];
 
-    if (isResident) {
-      return [
-        `Hóa đơn đã thanh toán: ${getActivityValue('Hóa đơn đã thanh toán')}`,
-        `Hóa đơn chưa thanh toán: ${getActivityValue('Hóa đơn chưa thanh toán')}`,
-        `Hóa đơn sắp quá hạn: ${getActivityValue('Hóa đơn sắp quá hạn')}`,
-        `Hóa đơn quá hạn: ${getActivityValue('Hóa đơn quá hạn')}`,
-        `Yêu cầu sửa chữa: ${data.maintenance ?? 0}`,
-      ];
-    }
+    const paidBillsLabel = intl.formatMessage({ id: 'pages.dashboard.activity.paidBills' });
+    const unpaidBillsLabel = intl.formatMessage({ id: 'pages.dashboard.activity.unpaidBills' });
+    const upcomingOverdueLabel = intl.formatMessage({ id: 'pages.dashboard.activity.upcomingOverdueBills' });
+    const overdueLabel = intl.formatMessage({ id: 'pages.dashboard.activity.overdueBills' });
+    const maintenanceLabel = intl.formatMessage({ id: 'pages.dashboard.activity.maintenanceRequests' });
 
     return [
-      `Hóa đơn đã thanh toán: ${getActivityValue('Hóa đơn đã thanh toán')}`,
-      `Hóa đơn chưa thanh toán: ${getActivityValue('Hóa đơn chưa thanh toán')}`,
-      `Hóa đơn sắp quá hạn: ${getActivityValue('Hóa đơn sắp quá hạn')}`,
-      `Hóa đơn quá hạn: ${getActivityValue('Hóa đơn quá hạn')}`,
-      `Yêu cầu sửa chữa: ${data.maintenance ?? 0}`,
+      `${paidBillsLabel}: ${getActivityValue('paidBills')}`,
+      `${unpaidBillsLabel}: ${getActivityValue('unpaidBills')}`,
+      `${upcomingOverdueLabel}: ${getActivityValue('upcomingOverdueBills')}`,
+      `${overdueLabel}: ${getActivityValue('overdueBills')}`,
+      `${maintenanceLabel}: ${getActivityValue('maintenanceRequests')}`,
     ];
   };
 
   const renderActivityItem = (item: string, index: number) => {
+    const paidBillsLabel = intl.formatMessage({ id: 'pages.dashboard.activity.paidBills' });
+    const unpaidBillsLabel = intl.formatMessage({ id: 'pages.dashboard.activity.unpaidBills' });
+    const upcomingOverdueLabel = intl.formatMessage({ id: 'pages.dashboard.activity.upcomingOverdueBills' });
+    const overdueLabel = intl.formatMessage({ id: 'pages.dashboard.activity.overdueBills' });
+    const maintenanceLabel = intl.formatMessage({ id: 'pages.dashboard.activity.maintenanceRequests' });
+
     let icon = <CheckCircleOutlined />;
     let color = '#1890ff';
 
-    if (item.includes('sửa chữa') || item.includes('trì')) {
+    if (item.includes(maintenanceLabel)) {
       icon = <SettingOutlined />;
       color = '#faad14';
-    } else if (item.includes('Hóa đơn đã thanh toán')) {
+    } else if (item.includes(paidBillsLabel)) {
       icon = <CheckCircleOutlined />;
       color = '#52c41a';
-    } else if (item.includes('Hóa đơn chưa thanh toán')) {
+    } else if (item.includes(unpaidBillsLabel)) {
       icon = <ExclamationCircleOutlined />;
       color = '#ff4d4f';
-    } else if (item.includes('Hóa đơn sắp quá hạn')) {
+    } else if (item.includes(upcomingOverdueLabel)) {
       icon = <ClockCircleOutlined />;
       color = '#faad14';
-    } else if (item.includes('Hóa đơn quá hạn')) {
+    } else if (item.includes(overdueLabel)) {
       icon = <CloseCircleOutlined />;
       color = '#ff4d4f';
-    } else if (item.includes('Hóa đơn')) {
-      icon = <DollarOutlined />;
-      color = item.includes('chưa') ? '#ff4d4f' : '#52c41a';
     }
 
     return (
@@ -231,7 +228,7 @@ const Dashboard = () => {
         <Col span={4}>
           <Card key={String(data?.totalApartment)} loading={loading} style={{ borderLeft: '4px solid #1890ff' }}>
             <Statistic
-              title={isResident ? 'Mã căn hộ' : 'Tổng căn hộ'}
+              title={isResident ? intl.formatMessage({ id: 'pages.dashboard.myApartmentCode' }) : intl.formatMessage({ id: 'pages.dashboard.totalApartments' })}
               value={isResident ? String(data?.totalApartment ?? 'N/A') : (data?.totalApartment || 0)}
               valueRender={() => <span>{isResident ? String(data?.totalApartment ?? 'N/A') : (data?.totalApartment || 0)}</span>}
               prefix={<HomeOutlined style={{ color: '#1890ff' }} />}
@@ -242,7 +239,7 @@ const Dashboard = () => {
         <Col span={5}>
           <Card loading={loading} style={{ borderLeft: '4px solid #52c41a' }}>
             <Statistic
-              title={isResident ? 'Hóa đơn đã thanh toán' : 'Tổng cư dân'}
+              title={isResident ? intl.formatMessage({ id: 'pages.dashboard.paidInvoices' }) : intl.formatMessage({ id: 'pages.dashboard.totalResidents' })}
               value={isResident ? data?.paidInvoiceTotal ?? 0 : data?.totalResident || 0}
               suffix={isResident ? 'đ' : undefined}
               prefix={<DollarOutlined style={{ color: '#52c41a' }} />}
@@ -253,7 +250,7 @@ const Dashboard = () => {
         <Col span={5}>
           <Card loading={loading} style={{ borderLeft: '4px solid #faad14' }}>
             <Statistic
-              title={isResident ? 'Hóa đơn chưa thanh toán' : 'Doanh thu'}
+              title={isResident ? intl.formatMessage({ id: 'pages.dashboard.unpaidInvoices' }) : intl.formatMessage({ id: 'pages.dashboard.totalRevenue' })}
               value={isResident ? data?.unpaidInvoiceTotal ?? 0 : data?.revenue || 0}
               suffix='đ'
               prefix={<ExclamationCircleOutlined style={{ color: '#faad14' }} />}
@@ -264,7 +261,7 @@ const Dashboard = () => {
         <Col span={5}>
           <Card loading={loading} style={{ borderLeft: '4px solid #ff4d4f' }}>
             <Statistic
-              title={isResident ? 'Sắp quá hạn' : 'Yêu cầu sửa chữa'}
+              title={isResident ? intl.formatMessage({ id: 'pages.dashboard.upcomingOverdue' }) : intl.formatMessage({ id: 'pages.dashboard.maintenanceRequests' })}
               value={isResident ? data?.upcomingOverdueTotal ?? 0 : data?.maintenance || 0}
               suffix={isResident ? 'đ' : undefined}
               prefix={<ClockCircleOutlined style={{ color: '#ff4d4f' }} />}
@@ -275,7 +272,7 @@ const Dashboard = () => {
         <Col span={5}>
           <Card loading={loading} style={{ borderLeft: '4px solid #722ed1' }}>
             <Statistic
-              title={isResident ? 'Quá hạn' : 'Khiếu nại chờ xử lý'}
+              title={isResident ? intl.formatMessage({ id: 'pages.dashboard.overdue' }) : intl.formatMessage({ id: 'pages.dashboard.complaintsPending' })}
               value={isResident ? data?.overdueTotal ?? 0 : data?.complaintPending || 0}
               suffix={isResident ? 'đ' : undefined}
               prefix={<CloseCircleOutlined style={{ color: '#722ed1' }} />}

@@ -150,9 +150,11 @@ export const getDashboard = async (req: DashboardRequest, res: Response) => {
         costData,
         billChartData,
         activities: [
-          `Hóa đơn chưa thanh toán: ${unpaidBillCount}`,
-          `Hóa đơn sắp quá hạn: ${upcomingOverdueBillCount}`,
-          `Hóa đơn quá hạn: ${overdueBillCount}`,
+          { key: 'paidBills', count: paidBillCount },
+          { key: 'unpaidBills', count: unpaidBillCount },
+          { key: 'upcomingOverdueBills', count: upcomingOverdueBillCount },
+          { key: 'overdueBills', count: overdueBillCount },
+          { key: 'maintenanceRequests', count: maintenanceRequests.length },
         ],
         notifications: notificationTargets.map(t => ({
           id: t.id,
@@ -238,11 +240,11 @@ export const getDashboard = async (req: DashboardRequest, res: Response) => {
         value: item.value,
       })),
       activities: [
-        `Hóa đơn đã thanh toán: ${paidBills}`,
-        `Hóa đơn chưa thanh toán: ${unpaidBills}`,
-        `Hóa đơn sắp quá hạn: ${upcomingOverdueBills}`,
-        `Hóa đơn quá hạn: ${overdueBills}`,
-        `Yêu cầu sửa chữa: ${totalMaintenance}`,
+        { key: 'paidBills', count: paidBills },
+        { key: 'unpaidBills', count: unpaidBills },
+        { key: 'upcomingOverdueBills', count: upcomingOverdueBills },
+        { key: 'overdueBills', count: overdueBills },
+        { key: 'maintenanceRequests', count: totalMaintenance },
       ],
     });
 
