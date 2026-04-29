@@ -5,6 +5,8 @@ import { useIntl } from '@umijs/max';
 import { useModel } from '@umijs/max';
 import { getConversations, getMessages, sendMessage, createConversation, ConversationItem, MessageItem, updateMessage, deleteMessage, deleteConversation } from '@/services/message';
 import { getUsers, UserItem } from '@/services/user';
+import { initSocketClient } from '@/services/socket';
+import type { Socket } from 'socket.io-client';
 
 const { TextArea } = Input;
 
@@ -24,6 +26,9 @@ export default () => {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const selectedConversationRef = useRef<LocalConversationItem | null>(null);
+  const activeConversationIdRef = useRef<string | null>(null);
 
   const getLatestConversationMessage = (messages?: ConversationItem['messages']) => {
     if (!messages || messages.length === 0) return undefined;
@@ -66,14 +71,85 @@ export default () => {
   useEffect(() => {
     loadConversations();
     loadUsers();
-    // Reload conversations every 30 seconds to update unread status
-    const interval = setInterval(loadConversations, 30000);
-    return () => clearInterval(interval);
   }, [currentUser]);
+
+  useEffect(() => {
+    const socket = initSocketClient();
+    socketRef.current = socket;
+
+    const handleNewMessage = (newMessage: MessageItem) => {
+      if (selectedConversationRef.current?.id === newMessage.conversationId) {
+        setMessages((prev: MessageItem[]) =>
+          prev.some((m) => m.id === newMessage.id) ? prev : [...prev, newMessage],
+        );
+      }
+
+      loadConversations();
+    };
+
+    const handleConversationUpdated = () => {
+      loadConversations();
+    };
+
+    const handleConversationNew = () => {
+      loadConversations();
+    };
+
+    const handleMessageUpdated = (updatedMessage: MessageItem) => {
+      if (selectedConversationRef.current?.id === updatedMessage.conversationId) {
+        setMessages((prev: MessageItem[]) => prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m)));
+      }
+      loadConversations();
+    };
+
+    const handleMessageDeleted = ({ messageId, conversationId }: { messageId: string; conversationId: string }) => {
+      if (selectedConversationRef.current?.id === conversationId) {
+        setMessages((prev: MessageItem[]) => prev.filter((m) => m.id !== messageId));
+      }
+      loadConversations();
+    };
+
+    const handleConversationDeleted = ({ conversationId }: { conversationId: string }) => {
+      setConversations((prev: LocalConversationItem[]) => prev.filter((conv) => conv.id !== conversationId));
+      if (selectedConversationRef.current?.id === conversationId) {
+        setIsModalOpen(false);
+        setSelectedConversation(null);
+        selectedConversationRef.current = null;
+        activeConversationIdRef.current = null;
+      }
+    };
+
+    socket.on('message:new', handleNewMessage);
+    socket.on('conversation:updated', handleConversationUpdated);
+    socket.on('conversation:new', handleConversationNew);
+    socket.on('message:updated', handleMessageUpdated);
+    socket.on('message:deleted', handleMessageDeleted);
+    socket.on('conversation:deleted', handleConversationDeleted);
+    socket.connect();
+
+    return () => {
+      socket.off('message:new', handleNewMessage);
+      socket.off('conversation:updated', handleConversationUpdated);
+      socket.off('conversation:new', handleConversationNew);
+      socket.off('message:updated', handleMessageUpdated);
+      socket.off('message:deleted', handleMessageDeleted);
+      socket.off('conversation:deleted', handleConversationDeleted);
+      socket.disconnect(); 
+    };
+  }, []);
 
   const handleConversationClick = async (conversation: LocalConversationItem) => {
     setSelectedConversation(conversation);
+    selectedConversationRef.current = conversation;
     setIsModalOpen(true);
+    if (socketRef.current) {
+      if (activeConversationIdRef.current && activeConversationIdRef.current !== conversation.id) {
+        socketRef.current.emit('leaveConversation', activeConversationIdRef.current);
+      }
+      socketRef.current.emit('joinConversation', conversation.id);
+      activeConversationIdRef.current = conversation.id;
+    }
+
     try {
       const msgs = await getMessages(conversation.id);
       setMessages(msgs);
@@ -89,7 +165,6 @@ export default () => {
 
     try {
       const msg = await sendMessage(selectedConversation.id, newMessage.trim());
-      setMessages(prev => [...prev, msg]);
       setNewMessage('');
       await loadConversations();
       // Scroll to bottom
@@ -102,7 +177,7 @@ export default () => {
   const handleCreateConversation = async (userId: string) => {
     try {
       const conv = await createConversation(userId);
-      setConversations(prev => [{ ...conv, hasUnread: false }, ...prev]);
+      setConversations((prev: LocalConversationItem[]) => [{ ...conv, hasUnread: false }, ...prev]);
       setIsCreateModalOpen(false);
       message.success( intl.formatMessage({ id: 'pages.message.createSuccess' }));
     } catch (error) {
@@ -120,7 +195,7 @@ export default () => {
 
     try {
       const updatedMsg = await updateMessage(editingMessageId, editingContent.trim());
-      setMessages(prev => prev.map(m => m.id === editingMessageId ? updatedMsg : m));
+      setMessages((prev: MessageItem[]) => prev.map((m) => m.id === editingMessageId ? updatedMsg : m));
       setEditingMessageId(null);
       setEditingContent('');
       message.success( intl.formatMessage({ id: 'pages.message.updateSuccess' }));
@@ -138,7 +213,7 @@ export default () => {
       onOk: async () => {
         try {
           await deleteMessage(messageId);
-          setMessages(prev => prev.filter(m => m.id !== messageId));
+          setMessages((prev: MessageItem[]) => prev.filter((m) => m.id !== messageId));
 
           message.success(
             intl.formatMessage({ id: 'pages.message.deleteSuccess' })
@@ -173,7 +248,7 @@ export default () => {
       onOk: async () => {
         try {
           await deleteConversation(conversationId);
-          setConversations(prev => prev.filter(c => c.id !== conversationId));
+          setConversations((prev: LocalConversationItem[]) => prev.filter((c) => c.id !== conversationId));
           if (selectedConversation?.id === conversationId) {
             setIsModalOpen(false);
           }
@@ -276,7 +351,15 @@ export default () => {
           </div>
         }
         open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={() => {
+          setIsModalOpen(false);
+          if (activeConversationIdRef.current && socketRef.current) {
+            socketRef.current.emit('leaveConversation', activeConversationIdRef.current);
+            activeConversationIdRef.current = null;
+          }
+          setSelectedConversation(null);
+          selectedConversationRef.current = null;
+        }}
         footer={null}
         width={600}
       >

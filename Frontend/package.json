@@ -2,19 +2,12 @@
   "name": "ant-design-pro",
   "version": "6.0.0",
   "private": true,
-
   "scripts": {
-
     "build": "max build",
-
     "preview": "max preview --host 0.0.0.0 --port $PORT",
-
     "start": "npm run preview",
-
     "postinstall": "max setup"
-
   },
-
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "@ant-design/plots": "^2.6.8",
@@ -26,16 +19,17 @@
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "socket.io-client": "^4.8.3"
   },
-
   "devDependencies": {
     "@ant-design/pro-cli": "^3.3.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@umijs/max": "^4.6.25",
-    "typescript": "^5.6.3",
-    "cross-env": "^10.1.0"
+    "cross-env": "^10.1.0",
+    "typescript": "^5.6.3"
   },
-
   "engines": {
     "node": "20.x"
   }

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../../config/prisma";
+import { getSocketServer } from "../../config/socket";
 
 interface AuthRequest extends Request {
   user?: {
@@ -157,6 +158,21 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
       data: { updatedAt: new Date() },
     });
 
+    const io = getSocketServer();
+    if (io) {
+      io.to(`conversation:${conversationId}`).emit("message:new", message);
+
+      const otherUserId =
+        conversation.user1Id === user.id ? conversation.user2Id : conversation.user1Id;
+
+      io.to(`user:${otherUserId}`).emit("conversation:updated", {
+        conversationId,
+      });
+      io.to(`user:${user.id}`).emit("conversation:updated", {
+        conversationId,
+      });
+    }
+
     res.json(message);
   } catch (error) {
     res.status(500).json({ message: "Error sending message" });
@@ -201,6 +217,12 @@ export const createConversation = async (req: AuthRequest, res: Response) => {
         user2Id: otherUserId,
       },
     });
+
+    const io = getSocketServer();
+    if (io) {
+      io.to(`user:${otherUserId}`).emit("conversation:new", conversation);
+      io.to(`user:${user.id}`).emit("conversation:new", conversation);
+    }
 
     res.json(conversation);
   } catch (error) {
@@ -268,8 +290,16 @@ export const updateMessage = async (req: AuthRequest, res: Response) => {
     const updatedMessage = await prisma.message.update({
       where: { id: messageId },
       data: { content },
-      include: { sender: { select: { id: true, fullName: true } } },
+      include: {
+        sender: { select: { id: true, fullName: true } },
+        conversation: { select: { id: true } },
+      },
     });
+
+    const io = getSocketServer();
+    if (io && updatedMessage.conversation) {
+      io.to(`conversation:${updatedMessage.conversation.id}`).emit("message:updated", updatedMessage);
+    }
 
     res.json(updatedMessage);
   } catch (error) {
@@ -301,6 +331,14 @@ export const deleteMessage = async (req: AuthRequest, res: Response) => {
     await prisma.message.delete({
       where: { id: messageId },
     });
+
+    const io = getSocketServer();
+    if (io) {
+      io.to(`conversation:${message.conversationId}`).emit("message:deleted", {
+        messageId,
+        conversationId: message.conversationId,
+      });
+    }
 
     res.json({ message: "Message deleted successfully" });
   } catch (error) {
@@ -339,6 +377,12 @@ export const deleteConversation = async (req: AuthRequest, res: Response) => {
     await prisma.conversation.delete({
       where: { id: conversationId },
     });
+
+    const io = getSocketServer();
+    if (io) {
+      io.to(`user:${conversation.user1Id}`).emit("conversation:deleted", { conversationId });
+      io.to(`user:${conversation.user2Id}`).emit("conversation:deleted", { conversationId });
+    }
 
     res.json({ message: "Conversation deleted successfully" });
   } catch (error) {
