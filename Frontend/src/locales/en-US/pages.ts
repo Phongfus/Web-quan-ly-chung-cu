@@ -146,6 +146,13 @@ export default {
   'pages.dashboard.activity.upcomingOverdueBills': 'Upcoming Overdue Bills',
   'pages.dashboard.activity.overdueBills': 'Overdue Bills',
   'pages.dashboard.activity.maintenanceRequests': 'Maintenance Requests',
+  'pages.dashboard.myApartment': 'My Apartment',
+  'pages.dashboard.apartmentMembers': 'Apartment Members',
+  'pages.dashboard.maintenanceStatus': 'Maintenance Status',
+  'pages.dashboard.costChart': 'Monthly Cost Breakdown',
+  'pages.dashboard.cost': 'Cost',
+  'pages.dashboard.notifications': 'Notifications',
+  'pages.dashboard.maintenanceSchedule': 'Maintenance Schedule',
 
   'components.advancedFilter.title': 'Advanced Filter',
   'components.advancedFilter.quickSearchPlaceholder': 'Search by ID or code',
@@ -165,6 +172,11 @@ export default {
   'components.advancedFilter.operator.lte': 'Less or equal',
   'components.advancedFilter.operator.isEmpty': 'Is empty',
   'components.advancedFilter.operator.isNotEmpty': 'Is not empty',
+  'pages.dashboard.latestNotifications': 'Latest Notifications',
+  'pages.dashboard.maintenanceRequests': 'Maintenance Requests',
+  'pages.dashboard.chart.column': 'Column',
+  'pages.dashboard.chart.line': 'Line',
+  'pages.dashboard.chart.pie': 'Pie',
 
   // ===== APARTMENT =====
   'pages.apartment.title': 'Apartment Management',

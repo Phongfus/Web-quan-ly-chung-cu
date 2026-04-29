@@ -60,7 +60,21 @@ export const getBills = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    // 🟡 Cập nhật status UNPAID → UPCOMING_OVERDUE nếu còn 3 ngày
+    // � Cập nhật status UPCOMING_OVERDUE → OVERDUE nếu quá hạn
+    await prisma.bill.updateMany({
+      where: {
+        status: "UPCOMING_OVERDUE",
+        dueDate: {
+          lt: today,
+        },
+        ...whereCondition,
+      },
+      data: {
+        status: "OVERDUE",
+      },
+    });
+
+    // �🟡 Cập nhật status UNPAID → UPCOMING_OVERDUE nếu còn 3 ngày
     await prisma.bill.updateMany({
       where: {
         status: "UNPAID",
@@ -275,7 +289,9 @@ export const createBill = async (req: AuthRequest, res: Response) => {
       threeDaysLater.setDate(threeDaysLater.getDate() + 3);
       const billDueDate = new Date(dueDate);
 
-      if (billDueDate >= today && billDueDate <= threeDaysLater) {
+      if (billDueDate < today) {
+        finalStatus = "OVERDUE";
+      } else if (billDueDate <= threeDaysLater) {
         finalStatus = "UPCOMING_OVERDUE";
       }
     }
@@ -500,7 +516,9 @@ export const updateBill = async (req: AuthRequest, res: Response) => {
         threeDaysLater.setDate(threeDaysLater.getDate() + 3);
         const billDueDate = new Date(dueDate);
 
-        if (billDueDate >= today && billDueDate <= threeDaysLater) {
+        if (billDueDate < today) {
+          finalStatus = "OVERDUE";
+        } else if (billDueDate <= threeDaysLater) {
           finalStatus = "UPCOMING_OVERDUE";
         }
       }

@@ -6,5 +6,5 @@ const auth_middleware_1 = require("../../middleware/auth.middleware");
 const role_middleware_1 = require("../../middleware/role.middleware");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
-router.get('/', (0, role_middleware_1.requireRole)(['ADMIN', 'RESIDENT']), dashboard_controller_1.getDashboard);
+router.get('/', (0, role_middleware_1.requireRole)(['RESIDENT']), dashboard_controller_1.getDashboard);
 exports.default = router;

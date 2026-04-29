@@ -13,7 +13,7 @@ const authMiddleware = async (req, res, next) => {
         req.user = decoded;
         // Kiểm tra user còn active không
         const user = await prisma_1.prisma.user.findUnique({
-            where: { id: decoded.id },
+            where: { id: decoded.userId },
             select: { isActive: true },
         });
         if (!user || !user.isActive) {
