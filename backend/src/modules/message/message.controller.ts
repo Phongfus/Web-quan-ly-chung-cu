@@ -95,7 +95,7 @@ export const getMessages = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    await prisma.message.updateMany({
+    const updated = await prisma.message.updateMany({
       where: {
         conversationId,
         senderId: { not: user.id },
@@ -103,6 +103,23 @@ export const getMessages = async (req: AuthRequest, res: Response) => {
       },
       data: { isRead: true },
     });
+
+    const unreadCount = await prisma.message.count({
+      where: {
+        conversation: {
+          OR: [{ user1Id: user.id }, { user2Id: user.id }],
+        },
+        senderId: { not: user.id },
+        isRead: false,
+      },
+    });
+
+    const io = getSocketServer();
+    if (io && updated.count > 0) {
+      io.to(`user:${user.id}`).emit("message:unread-count-updated", {
+        count: unreadCount,
+      });
+    }
 
     const messages = await prisma.message.findMany({
       where: { conversationId },
@@ -164,6 +181,21 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
 
       const otherUserId =
         conversation.user1Id === user.id ? conversation.user2Id : conversation.user1Id;
+
+      const recipientUnreadCount = await prisma.message.count({
+        where: {
+          conversation: {
+            OR: [{ user1Id: otherUserId }, { user2Id: otherUserId }],
+          },
+          senderId: { not: otherUserId },
+          isRead: false,
+        },
+      });
+
+      // Emit unread count update to the recipient
+      io.to(`user:${otherUserId}`).emit("message:unread-count-updated", {
+        count: recipientUnreadCount,
+      });
 
       io.to(`user:${otherUserId}`).emit("conversation:updated", {
         conversationId,

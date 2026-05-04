@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../../config/prisma";
+import { getSocketServer } from "../../config/socket";
 
 export const getNotifications = async (req: Request, res: Response) => {
   try {
@@ -198,6 +199,25 @@ export const markAsRead = async (req: Request, res: Response) => {
       targetId: updated.id,
     };
 
+    // Emit socket event to user
+    const io = getSocketServer();
+    if (io) {
+      const unreadCount = await prisma.notificationTarget.count({
+        where: {
+          userId,
+          isRead: false,
+        },
+      });
+
+      io.to(`user:${userId}`).emit("notification:read", {
+        notificationId: id,
+        unreadCount,
+      });
+      io.to(`user:${userId}`).emit("notification:count-updated", {
+        unreadCount,
+      });
+    }
+
     res.json(notification);
   } catch (error: any) {
     console.error("Mark as read error:", error);
@@ -223,6 +243,17 @@ export const markAllAsRead = async (req: Request, res: Response) => {
         isRead: true,
       },
     });
+
+    // Emit socket event to user
+    const io = getSocketServer();
+    if (io) {
+      io.to(`user:${userId}`).emit("notification:allread", {
+        userId,
+      });
+      io.to(`user:${userId}`).emit("notification:count-updated", {
+        unreadCount: 0,
+      });
+    }
 
     res.json({
       message: "Đã đánh dấu tất cả thông báo là đã đọc",
@@ -311,6 +342,33 @@ export const createNotification = async (req: Request, res: Response) => {
         },
       },
     });
+
+    // Emit socket event to each user
+    const io = getSocketServer();
+    if (io) {
+      console.log('Emitting notification:new to users:', userIds);
+      await Promise.all(
+        userIds.map(async (userId) => {
+          const unreadCount = await prisma.notificationTarget.count({
+            where: {
+              userId,
+              isRead: false,
+            },
+          });
+
+          io.to(`user:${userId}`).emit("notification:new", {
+            id: notification.id,
+            title: notification.title,
+            content: notification.content,
+            createdAt: notification.createdAt,
+            unreadCount,
+          });
+          io.to(`user:${userId}`).emit("notification:count-updated", {
+            unreadCount,
+          });
+        }),
+      );
+    }
 
     res.status(201).json(notification);
   } catch (error: any) {

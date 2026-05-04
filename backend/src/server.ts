@@ -58,6 +58,12 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("joinUser", () => {
+    if (user?.id) {
+      socket.join(`user:${user.id}`);
+    }
+  });
+
   socket.on("disconnect", () => {
     // cleanup if needed
   });

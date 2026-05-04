@@ -25,9 +25,7 @@ import dayjs from 'dayjs';
 import { useIntl, useModel } from '@umijs/max';
 import { getDashboard } from '@/services/dashboard';
 
-/**
- * ✅ TYPE DEFINITION
- */
+
 type DashboardData = {
   totalApartment: string | number;
   totalResident: number;
@@ -125,13 +123,13 @@ const Dashboard = () => {
       color = '#52c41a';
     } else if (item.includes(unpaidBillsLabel)) {
       icon = <ExclamationCircleOutlined />;
-      color = '#ff4d4f';
+      color = '#f98ac1';
     } else if (item.includes(upcomingOverdueLabel)) {
       icon = <ClockCircleOutlined />;
-      color = '#faad14';
+      color = '#bd5916';
     } else if (item.includes(overdueLabel)) {
       icon = <CloseCircleOutlined />;
-      color = '#ff4d4f';
+      color = '#ff0004';
     }
 
     return (
@@ -242,40 +240,40 @@ const Dashboard = () => {
               title={isResident ? intl.formatMessage({ id: 'pages.dashboard.paidInvoices' }) : intl.formatMessage({ id: 'pages.dashboard.totalResidents' })}
               value={isResident ? data?.paidInvoiceTotal ?? 0 : data?.totalResident || 0}
               suffix={isResident ? 'đ' : undefined}
-              prefix={<DollarOutlined style={{ color: '#52c41a' }} />}
+              prefix={isResident ? <DollarOutlined style={{ color: '#52c41a' }} /> : <TeamOutlined style={{ color: '#52c41a' }} />}
             />
           </Card>
         </Col>
 
         <Col span={5}>
-          <Card loading={loading} style={{ borderLeft: '4px solid #faad14' }}>
+          <Card loading={loading} style={{ borderLeft: '4px solid #ff7bd1' }}>
             <Statistic
               title={isResident ? intl.formatMessage({ id: 'pages.dashboard.unpaidInvoices' }) : intl.formatMessage({ id: 'pages.dashboard.totalRevenue' })}
               value={isResident ? data?.unpaidInvoiceTotal ?? 0 : data?.revenue || 0}
               suffix='đ'
-              prefix={<ExclamationCircleOutlined style={{ color: '#faad14' }} />}
+              prefix={isResident ? <ExclamationCircleOutlined style={{ color: '#ff7bd1' }} /> : <DollarOutlined style={{ color: '#ff7bd1' }} />}
             />
           </Card>
         </Col>
 
         <Col span={5}>
-          <Card loading={loading} style={{ borderLeft: '4px solid #ff4d4f' }}>
+          <Card loading={loading} style={{ borderLeft: '4px solid #fa7b7d' }}>
             <Statistic
               title={isResident ? intl.formatMessage({ id: 'pages.dashboard.upcomingOverdue' }) : intl.formatMessage({ id: 'pages.dashboard.maintenanceRequests' })}
               value={isResident ? data?.upcomingOverdueTotal ?? 0 : data?.maintenance || 0}
               suffix={isResident ? 'đ' : undefined}
-              prefix={<ClockCircleOutlined style={{ color: '#ff4d4f' }} />}
+              prefix={isResident ? <ClockCircleOutlined style={{ color: '#fa7b7d' }} /> : <ToolOutlined style={{ color: '#fa7b7d' }} />}
             />
           </Card>
         </Col>
 
         <Col span={5}>
-          <Card loading={loading} style={{ borderLeft: '4px solid #722ed1' }}>
+          <Card loading={loading} style={{ borderLeft: '4px solid #fc0000' }}>
             <Statistic
               title={isResident ? intl.formatMessage({ id: 'pages.dashboard.overdue' }) : intl.formatMessage({ id: 'pages.dashboard.complaintsPending' })}
               value={isResident ? data?.overdueTotal ?? 0 : data?.complaintPending || 0}
               suffix={isResident ? 'đ' : undefined}
-              prefix={<CloseCircleOutlined style={{ color: '#722ed1' }} />}
+              prefix={isResident ? <CloseCircleOutlined style={{ color: '#fc0000' }} /> : <ExclamationCircleOutlined style={{ color: '#fc0000' }} />}
             />
           </Card>
         </Col>

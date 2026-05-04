@@ -1,6 +1,7 @@
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import { getIntl } from '@umijs/max';
 import Actions from '@/components/Actions';
+import { initSocketClient, reconnectSocketWithToken } from '@/services/socket';
 
 type InitialState = {
   currentUser?: {
@@ -110,13 +111,21 @@ export const request: RequestConfig = {
 
 export const layout: RunTimeLayoutConfig = ({ initialState }) => {
 
+  // Initialize socket when user is authenticated
+  if (initialState?.currentUser) {
+    reconnectSocketWithToken();
+  } else {
+    // Initialize socket even when not authenticated, it will reconnect when token is available
+    initSocketClient();
+  }
+
   return {
 
     title: getIntl().formatMessage({ id: 'app.title' }),
 
     layout: 'mix',
 
-    actionsRender: () => [<Actions unreadNotifications={initialState?.unreadNotifications} key="actions" />],
+    actionsRender: () => [<Actions key="actions" />],
 
     avatarProps: {
       src: initialState?.currentUser?.avatar,

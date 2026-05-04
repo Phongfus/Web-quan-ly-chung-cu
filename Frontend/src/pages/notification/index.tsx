@@ -6,6 +6,9 @@ import { useAccess } from '@umijs/max';
 import { getNotifications, markAsRead, markAllAsRead, NotificationItem, getUnreadCount, createNotification } from '@/services/notification';
 import { getResidents, ResidentItem } from '@/services/resident';
 import { getApartments, ApartmentItem } from '@/services/apartment';
+import { on } from '@/services/socket';
+import { initSocketClient, connectSocket } from '@/services/socket';
+import { useModel } from '@umijs/max';
 
 const recipientModes = [
   { label: 'Chọn tất cả cư dân', value: 'all' },
@@ -20,7 +23,23 @@ export default () => {
   const actionRef = useRef<ActionType | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const access = useAccess();
+  const { initialState } = useModel('@@initialState');
   const [form] = Form.useForm();
+  useEffect(() => {
+    if (initialState?.currentUser?.id) {
+      console.log("🔌 connect socket notification");
+
+      const socket = initSocketClient();
+
+      socket.connect(); // 🔥 BẮT BUỘC
+
+      socket.on("connect", () => {
+        console.log("✅ connected, join user");
+
+        connectSocket(initialState.currentUser!.id);
+      });
+    }
+  }, [initialState]);
   const [residents, setResidents] = useState<ResidentItem[]>([]);
   const [apartments, setApartments] = useState<ApartmentItem[]>([]);
   const [recipientMode, setRecipientMode] = useState<RecipientMode>('all');
@@ -66,6 +85,43 @@ export default () => {
       loadApartments();
     }
   }, [access.isAdmin]);
+
+  // Socket listeners for real-time updates
+  useEffect(() => {
+    // Listen for new notifications
+    const unsubscribeNewNotif = on('notification:new', () => {
+      actionRef.current?.reload();
+      loadUnreadCount();
+    });
+
+    // Listen for notification read events
+    const unsubscribeReadNotif = on('notification:read', () => {
+      actionRef.current?.reload();
+      loadUnreadCount();
+    });
+
+    // Listen for all notifications read
+    const unsubscribeAllReadNotif = on('notification:allread', () => {
+      actionRef.current?.reload();
+      setUnreadCount(0);
+    });
+
+    // Listen for unread count updates
+    const unsubscribeCountUpdated = on('notification:count-updated', (data: { unreadCount: number }) => {
+      if (typeof data?.unreadCount === 'number') {
+        setUnreadCount(data.unreadCount);
+      } else {
+        loadUnreadCount();
+      }
+    });
+
+    return () => {
+      unsubscribeNewNotif();
+      unsubscribeReadNotif();
+      unsubscribeAllReadNotif();
+      unsubscribeCountUpdated();
+    };
+  }, []);
 
   const availableFloors = Array.from(
     new Set(
@@ -117,8 +173,7 @@ export default () => {
     try {
       await markAsRead(record.id);
       message.success('Đã đánh dấu đã đọc');
-      actionRef.current?.reload();
-      loadUnreadCount();
+      // Socket event will automatically update the table and unread count
     } catch (error) {
       message.error('Không thể đánh dấu đã đọc');
     }
@@ -153,8 +208,7 @@ export default () => {
     try {
       await markAllAsRead();
       message.success('Đã đánh dấu tất cả đã đọc');
-      actionRef.current?.reload();
-      setUnreadCount(0);
+      // Socket event will automatically update the table and unread count
     } catch (error) {
       message.error('Không thể đánh dấu tất cả đã đọc');
     }
@@ -168,8 +222,7 @@ export default () => {
     if (!record.isRead) {
       try {
         await markAsRead(record.id);
-        loadUnreadCount();
-        actionRef.current?.reload();
+        // Socket event will automatically update the table and unread count
       } catch (error) {
         console.error('Mark as read error:', error);
       }
