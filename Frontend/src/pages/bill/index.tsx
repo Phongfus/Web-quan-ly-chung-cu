@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Modal, Form, Input, DatePicker, InputNumber, message, Table, Space, Select, Radio, Card, Divider } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, DollarOutlined, FileTextOutlined, BankOutlined, CreditCardOutlined, WalletOutlined, CheckOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, DollarOutlined, FileTextOutlined, BankOutlined, CreditCardOutlined, WalletOutlined, CheckOutlined, FileExcelOutlined } from '@ant-design/icons';
 import { useIntl, useAccess } from '@umijs/max';
 import qrBankImage from '@/assets/qr-bank.jpg';
 import AdvancedFilterDrawer, {
@@ -14,6 +14,7 @@ import { getApartments, ApartmentItem } from '@/services/apartment';
 import dayjs from 'dayjs';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 
 export default () => {
   const intl = useIntl();
@@ -489,6 +490,26 @@ export default () => {
     actionRef.current?.reload();
   };
 
+  const handleExportExcel = () => {
+    const data = allData.map(item => ({
+      ID: item.id,
+      'Căn hộ': item.apartment?.code,
+      'Tháng': item.month,
+      'Năm': item.year,
+      'Tiền điện': item.electricityFee,
+      'Tiền nước': item.waterFee,
+      'Phí dịch vụ': item.serviceFee,
+      'Tổng tiền': item.amount,
+      'Ngày đến hạn': item.dueDate,
+      'Trạng thái': item.status === 'PAID' ? 'Đã thanh toán' : item.status === 'UNPAID' ? 'Chưa thanh toán' : item.status === 'WAITING_CONFIRMATION' ? 'Chờ xác nhận' : item.status === 'OVERDUE' ? 'Quá hạn' : 'Sắp quá hạn',
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Hóa đơn');
+    XLSX.writeFile(wb, 'hoa_don.xlsx');
+    message.success(intl.formatMessage({ id: 'pages.bill.exportExcelSuccess' }) || 'Xuất Excel thành công');
+  };
+
   const handleExternalSearch = (value: string) => {
     setQuickSearch(value);
     setSearchText(value);
@@ -624,6 +645,9 @@ export default () => {
           </Button>,
           <Button key="clearFilters" onClick={handleClearFilters}>
             {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
+          </Button>,
+          <Button key="exportExcel" type="default" icon={<FileExcelOutlined />} onClick={handleExportExcel}>
+            {intl.formatMessage({ id: 'pages.bill.exportExcel' }) || 'Xuất Excel'}
           </Button>,
           ...(access.isResident
             ? []

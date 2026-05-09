@@ -305,6 +305,8 @@ export default {
   'pages.bill.paymentError': 'Thanh toán thất bại',
   'pages.bill.exportSuccess': 'Xuất hóa đơn thành công',
   'pages.bill.exportError': 'Xuất hóa đơn thất bại',
+  'pages.bill.exportExcel': 'Xuất Excel',
+  'pages.bill.exportExcelSuccess': 'Xuất Excel thành công',
   'pages.bill.addNew': 'Thêm mới',
   'pages.bill.paymentModalTitle': 'Thanh toán hóa đơn',
   'pages.bill.paymentMethod': 'Phương thức thanh toán',
