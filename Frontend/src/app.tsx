@@ -120,7 +120,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
   }
 
   return {
-
+    logo: '/logo.png',
     title: getIntl().formatMessage({ id: 'app.title' }),
 
     layout: 'mix',

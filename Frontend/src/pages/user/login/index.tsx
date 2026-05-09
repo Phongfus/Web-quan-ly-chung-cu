@@ -53,50 +53,105 @@ const Login: React.FC = () => {
         <title>Login</title>
       </Helmet>
 
+      {/* Language */}
       <div style={{ position: 'fixed', right: 16, top: 16 }}>
         <SelectLang />
       </div>
 
-      <div style={{ flex: 1, padding: '32px 0' }}>
-        <LoginForm
-          contentStyle={{
-            minWidth: 280,
-            maxWidth: '75vw',
+      {/* Center */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '32px 0',
+        }}
+      >
+        {/* Card */}
+        <div
+          style={{
+            background: '#fff',
+            padding: '40px 36px',
+            borderRadius: 24,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            width: 520,
           }}
-          logo={<img alt="logo" src="/logo.svg" />}
-          title="Apartment System"
-          subTitle="Hệ thống quản lý chung cư"
-          onFinish={handleSubmit}
         >
-          {/* EMAIL */}
-          <ProFormText
-            name="email"
-            fieldProps={{
-              size: 'large',
-              prefix: <UserOutlined />,
+          <LoginForm
+            contentStyle={{
+              width: '100%',
             }}
-            placeholder="Email"
-            rules={[
-              { required: true, message: 'Vui lòng nhập email!' },
-            ]}
-          />
+            logo={ <img alt="logo"src="/logo.png"
+                style={{
+                  width: 110,
+                  height: 110,
+                  objectFit: 'contain',
+                  marginBottom: 8,
+                  marginLeft: -120,
+                }}
+              />
+            }
+            title={
+              <div
+                style={{
+                  fontSize: 32,
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                  textAlign: 'left',
+                  paddingLeft: 30,
+                  lineHeight: 1.2,
+                  width: '100%',
+                  marginLeft: -80,
+                }}
+              >
+                Apartment System
+              </div>
+            }
+            subTitle={
+              <div
+                style={{
+                  marginTop: 8,
+                  fontSize: 16,
+                  color: '#64748b',
+                  textAlign: 'center',
+                  width: '100%',
+                }}
+              >
+                Hệ thống quản lý chung cư
+              </div>
+            }
+            onFinish={handleSubmit}
+          >
+            {/* EMAIL */}
+            <ProFormText
+              name="email"
+              fieldProps={{
+                size: 'large',
+                prefix: <UserOutlined />,
+              }}
+              placeholder="Email"
+              rules={[
+                { required: true, message: 'Vui lòng nhập email!' },
+              ]}
+            />
 
-          {/* PASSWORD */}
-          <ProFormText.Password
-            name="password"
-            fieldProps={{
-              size: 'large',
-              prefix: <LockOutlined />,
-            }}
-            placeholder="Password"
-            rules={[
-              { required: true, message: 'Vui lòng nhập mật khẩu!' },
-            ]}
-          />
-        </LoginForm>
+            {/* PASSWORD */}
+            <ProFormText.Password
+              name="password"
+              fieldProps={{
+                size: 'large',
+                prefix: <LockOutlined />,
+              }}
+              placeholder="Password"
+              rules={[
+                { required: true, message: 'Vui lòng nhập mật khẩu!' },
+              ]}
+            />
+          </LoginForm>
+        </div>
       </div>
 
-      <Footer />
     </div>
   );
 };

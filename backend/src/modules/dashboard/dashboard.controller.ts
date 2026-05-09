@@ -69,7 +69,11 @@ export const getDashboard = async (req: DashboardRequest, res: Response) => {
 
         prisma.bill.aggregate({
           _sum: { amount: true },
-          where: { apartmentId, year: Number(year), status: 'UNPAID' },
+          where: {
+            apartmentId,
+            year: Number(year),
+            status: { in: ['UNPAID', 'WAITING_CONFIRMATION'] },
+          },
         }),
 
         prisma.bill.aggregate({
@@ -87,7 +91,11 @@ export const getDashboard = async (req: DashboardRequest, res: Response) => {
         }),
 
         prisma.bill.count({
-          where: { apartmentId, year: Number(year), status: 'UNPAID' },
+          where: {
+            apartmentId,
+            year: Number(year),
+            status: { in: ['UNPAID', 'WAITING_CONFIRMATION'] },
+          },
         }),
 
         prisma.bill.count({
@@ -203,7 +211,12 @@ export const getDashboard = async (req: DashboardRequest, res: Response) => {
       }),
 
       prisma.bill.count({ where: { status: 'PAID', year: Number(year) } }),
-      prisma.bill.count({ where: { status: 'UNPAID', year: Number(year) } }),
+      prisma.bill.count({
+        where: {
+          year: Number(year),
+          status: { in: ['UNPAID', 'WAITING_CONFIRMATION'] },
+        },
+      }),
       prisma.bill.count({ where: { status: 'UPCOMING_OVERDUE', year: Number(year) } }),
       prisma.bill.count({ where: { status: 'OVERDUE', year: Number(year) } }),
     ]);

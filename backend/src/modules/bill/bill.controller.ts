@@ -434,26 +434,52 @@ export const updateBill = async (req: AuthRequest, res: Response) => {
       let paymentStatus: string;
 
       if (paymentMethod === 'CASH') {
-        // Thanh toán tiền mặt - xác nhận ngay
+        // Thanh toán tiền mặt - chờ xác nhận admin
         paymentStatus = 'SUCCESS';
         shouldUpdateBillStatus = true;
-        finalStatus = 'PAID';
+        finalStatus = 'WAITING_CONFIRMATION';
       } else if (paymentMethod === 'BANK_TRANSFER') {
         // Thanh toán chuyển khoản - chờ xác nhận
         paymentStatus = 'PENDING';
-        shouldUpdateBillStatus = false;
-        // Giữ nguyên status hiện tại của bill
-        finalStatus = initialStatus || "UNPAID";
+        shouldUpdateBillStatus = true;
+        finalStatus = 'WAITING_CONFIRMATION';
       } else {
         paymentStatus = 'SUCCESS';
         shouldUpdateBillStatus = true;
-        finalStatus = 'PAID';
+        finalStatus = 'WAITING_CONFIRMATION';
       }
 
       if (paymentMethod === 'CASH') {
         // Sử dụng transaction để đảm bảo cả payment và bill update đều thành công
         await prisma.$transaction(async (tx) => {
           // Tạo payment record
+          const billInfo = await tx.bill.findUnique({
+            where: { id },
+            select: { amount: true }
+          })
+
+          await tx.payment.create({
+            data: {
+              billId: id,
+              amount: billInfo?.amount || 0,
+              method: paymentMethod as any,
+              bankAccount,
+              notes,
+              status: paymentStatus as any,
+            },
+          });
+
+          // Cập nhật status bill
+          await tx.bill.update({
+            where: { id },
+            data: {
+              status: finalStatus as any,
+            },
+          });
+        });
+      } else if (paymentMethod === 'BANK_TRANSFER') {
+        // Sử dụng transaction cho BANK_TRANSFER cũng
+        await prisma.$transaction(async (tx) => {
           const billInfo = await tx.bill.findUnique({
             where: { id },
             select: { amount: true }
@@ -535,26 +561,53 @@ if (month !== undefined) updateData.month = month
 if (year !== undefined) updateData.year = year
 if (dueDate) updateData.dueDate = new Date(dueDate)
 
-// Chỉ set status nếu chưa được update trong transaction (cho CASH)
-if (!(paymentMethod === 'CASH' && shouldUpdateBillStatus)) {
+// Chỉ set status nếu chưa được update trong transaction (cho CASH và BANK_TRANSFER)
+if (!(paymentMethod === 'CASH' || paymentMethod === 'BANK_TRANSFER')) {
   updateData.status = finalStatus
 }
 
+const isAdminConfirming = user.role === 'ADMIN'
+  && currentBill.status === 'WAITING_CONFIRMATION'
+  && initialStatus === 'PAID'
+
 let data: any
 if (Object.keys(updateData).length > 0) {
-  data = await prisma.bill.update({
-    where: { id },
-    data: updateData,
-    include: {
-      apartment: {
-        select: {
-          id: true,
-          code: true,
+  if (isAdminConfirming) {
+    const [, bill] = await prisma.$transaction([
+      prisma.payment.updateMany({
+        where: { billId: id, status: 'PENDING' },
+        data: { status: 'SUCCESS' },
+      }),
+      prisma.bill.update({
+        where: { id },
+        data: updateData,
+        include: {
+          apartment: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+          payments: true,
         },
+      }),
+    ]);
+    data = bill;
+  } else {
+    data = await prisma.bill.update({
+      where: { id },
+      data: updateData,
+      include: {
+        apartment: {
+          select: {
+            id: true,
+            code: true,
+          },
+        },
+        payments: true,
       },
-      payments: true,
-    },
-  });
+    });
+  }
 } else {
   data = await prisma.bill.findUnique({
     where: { id },

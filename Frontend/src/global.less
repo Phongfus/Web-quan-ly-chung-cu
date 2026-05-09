@@ -60,6 +60,30 @@ body,
 .ant-pro-sider.ant-layout-sider.ant-pro-sider-fixed {
   left: unset;
 }
+/* màu nền menu bên trái */
+.ant-pro-sider.ant-layout-sider,
+.ant-pro-sider.ant-layout-sider .ant-menu,
+.ant-pro-sider.ant-layout-sider .ant-menu-inline,
+.ant-pro-sider.ant-layout-sider .ant-menu-inline .ant-menu-item,
+.ant-pro-sider.ant-layout-sider .ant-menu-inline .ant-menu-submenu-title {
+  background-color: #d1f4f7 !important;
+}
+
+.ant-pro-sider.ant-layout-sider .ant-menu-item,
+.ant-pro-sider.ant-layout-sider .ant-menu-submenu-title,
+.ant-pro-sider.ant-layout-sider .ant-menu-item a,
+.ant-pro-sider.ant-layout-sider .ant-menu-submenu-title span {
+  color: #000000 !important;
+}
+
+.ant-pro-sider.ant-layout-sider .ant-menu-item-selected,
+.ant-pro-sider.ant-layout-sider .ant-menu-item-active,
+.ant-pro-sider.ant-layout-sider .ant-menu-item:hover,
+.ant-pro-sider.ant-layout-sider .ant-menu-submenu-title:hover {
+  background-color: #a5ffa9 !important;
+  color: #ff0000 !important;
+}
+
 
 canvas {
   display: block;
@@ -108,3 +132,24 @@ ol {
     }
   }
 }
+/* ===== Logo Sidebar ===== */
+
+.ant-pro-global-header-logo img {
+  width: 110px !important;
+  height: 110px !important;
+  object-fit: contain;
+}
+
+/* màu menu ngang trên cùng */
+.ant-pro-global-header,
+.ant-pro-topbar,
+.ant-pro-topbar .ant-menu,
+.ant-pro-global-header .ant-menu,
+.ant-pro-global-header .ant-menu-horizontal {
+  background-color: #efefef !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+

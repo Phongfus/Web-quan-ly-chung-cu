@@ -253,6 +253,7 @@ enum Role {
 
 enum BillStatus {
   UNPAID
+  WAITING_CONFIRMATION
   PAID
   UPCOMING_OVERDUE
   OVERDUE

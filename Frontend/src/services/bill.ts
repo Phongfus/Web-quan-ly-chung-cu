@@ -10,7 +10,7 @@ export interface BillItem {
   month: number;
   year: number;
   dueDate: string;
-  status: 'UNPAID' | 'PAID' | 'UPCOMING_OVERDUE' | 'OVERDUE';
+  status: 'UNPAID' | 'WAITING_CONFIRMATION' | 'PAID' | 'UPCOMING_OVERDUE' | 'OVERDUE';
   createdAt: string;
   updatedAt: string;
 

@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Modal, Form, Input, DatePicker, InputNumber, message, Table, Space, Select, Radio, Card, Divider } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, DollarOutlined, FileTextOutlined, BankOutlined, CreditCardOutlined, WalletOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, DollarOutlined, FileTextOutlined, BankOutlined, CreditCardOutlined, WalletOutlined, CheckOutlined } from '@ant-design/icons';
 import { useIntl, useAccess } from '@umijs/max';
+import qrBankImage from '@/assets/qr-bank.jpg';
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
@@ -66,20 +67,32 @@ export default () => {
           paymentMethod: 'CASH',
           notes: values.notes
         });
-        message.success(intl.formatMessage({ id: 'pages.bill.paymentSuccess' }) || 'Thanh toán thành công');
+        message.info(intl.formatMessage({ id: 'pages.bill.cashPaymentWaiting' }) || 'Thanh toán tiền mặt đã được ghi nhận. Đang chờ admin xác nhận.');
         setPaymentModalOpen(false);
         actionRef.current?.reload();
       } else if (values.paymentMethod === 'BANK_TRANSFER') {
-          await updateBill(paymentRecord.id, {
-            paymentMethod: 'BANK_TRANSFER',
-            notes: values.notes
-          });
+        await updateBill(paymentRecord.id, {
+          paymentMethod: 'BANK_TRANSFER',
+          notes: values.notes
+        });
         message.info(intl.formatMessage({ id: 'pages.bill.bankTransferMessage' }));
         setPaymentModalOpen(false);
         actionRef.current?.reload();
       }
     } catch (error) {
       message.error(intl.formatMessage({ id: 'pages.bill.paymentError' }) || 'Thanh toán thất bại');
+    }
+  };
+
+  const handleConfirmBill = async (record: BillItem) => {
+    try {
+      await updateBill(record.id, {
+        status: 'PAID',
+      });
+      message.success(intl.formatMessage({ id: 'pages.bill.confirmBillSuccess' }) || 'Xác nhận thanh toán thành công');
+      actionRef.current?.reload();
+    } catch (error) {
+      message.error(intl.formatMessage({ id: 'pages.bill.confirmBillError' }) || 'Xác nhận thất bại');
     }
   };
 
@@ -258,9 +271,10 @@ export default () => {
     {
       title: intl.formatMessage({ id: 'pages.bill.status' }),
       dataIndex: 'status',
-      width: 100,
+      width: 120,
       valueEnum: {
         UNPAID: { text: intl.formatMessage({ id: 'pages.bill.status.unpaid' }) },
+        WAITING_CONFIRMATION: { text: intl.formatMessage({ id: 'pages.bill.status.waitingConfirmation' }) },
         PAID: { text: intl.formatMessage({ id: 'pages.bill.status.paid' }) },
         UPCOMING_OVERDUE: { text: intl.formatMessage({ id: 'pages.bill.status.upcomingOverdue' })},
         OVERDUE: { text: intl.formatMessage({ id: 'pages.bill.status.overdue' })},
@@ -268,6 +282,8 @@ export default () => {
       render: (_, record) => {
         if (record.status === 'PAID') {
           return <Tag color="green">{intl.formatMessage({ id: 'pages.bill.status.paid' })}</Tag>;
+        } else if (record.status === 'WAITING_CONFIRMATION') {
+          return <Tag color="orange">{intl.formatMessage({ id: 'pages.bill.status.waitingConfirmation' })}</Tag>;
         } else if (record.status === 'OVERDUE') {
           return <Tag color="red">{intl.formatMessage({ id: 'pages.bill.status.overdue' })}</Tag>;
         } else if (record.status === 'UPCOMING_OVERDUE') {
@@ -313,6 +329,7 @@ export default () => {
           const canEdit = record.status !== 'PAID';
           const canDelete = record.status !== 'PAID';
           const canExport = record.status === 'PAID';
+          const canConfirm = record.status === 'WAITING_CONFIRMATION';
           return [
             canEdit && (
               <Button
@@ -333,6 +350,16 @@ export default () => {
                 onClick={() => handleDelete(record.id)}
               >
                 {intl.formatMessage({ id: 'pages.bill.delete' })}
+              </Button>
+            ),
+            canConfirm && (
+              <Button
+                key="confirm"
+                type="primary"
+                icon={<CheckOutlined />}
+                onClick={() => handleConfirmBill(record)}
+              >
+                {intl.formatMessage({ id: 'pages.bill.confirmBill' }) || 'Xác nhận'}
               </Button>
             ),
             canExport && (
@@ -431,6 +458,7 @@ export default () => {
       options: [
         { label: intl.formatMessage({ id: 'pages.bill.status.paid' }), value: 'PAID' },
         { label: intl.formatMessage({ id: 'pages.bill.status.unpaid' }), value: 'UNPAID' },
+        { label: intl.formatMessage({ id: 'pages.bill.status.waitingConfirmation' }), value: 'WAITING_CONFIRMATION' },
         {label: intl.formatMessage({id: 'pages.bill.status.upcomingOverdue'}),value: 'UPCOMING_OVERDUE'},
         {label: intl.formatMessage({id: 'pages.bill.status.overdue'}),value: 'OVERDUE'},
       ],
@@ -842,6 +870,10 @@ export default () => {
                   value: 'UNPAID',
                   label: intl.formatMessage({ id: 'pages.bill.status.unpaid' }),
                 },
+                {
+                  value: 'WAITING_CONFIRMATION',
+                  label: intl.formatMessage({ id: 'pages.bill.status.waitingConfirmation' }),
+                },
               ]}
             />
           </Form.Item>
@@ -944,25 +976,16 @@ export default () => {
                         <div style={{
                           width: 200,
                           height: 200,
-                          backgroundColor: '#f0f0f0',
-                          border: '2px dashed #d9d9d9',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           margin: '0 auto',
                           borderRadius: 8
                         }}>
-                          <div style={{ textAlign: 'center', color: '#666' }}>
-                            <BankOutlined style={{ fontSize: 48, marginBottom: 8 }} />
-                            <div>QR Code</div>
-                            <div style={{ fontSize: 12 }}>Sẽ hiển thị mã QR thực tế</div>
-                          </div>
+                          <img src={qrBankImage} alt="QR Code" style={{ width: '100%', height: '100%', borderRadius: 8 }} />
                         </div>
                         <div style={{ marginTop: 16, fontSize: 12, color: '#666' }}>
                           <div><strong>Thông tin chuyển khoản:</strong></div>
-                          <div>Ngân hàng: Vietcombank</div>
-                          <div>Số tài khoản: 1234567890</div>
-                          <div>Chủ tài khoản: Công ty Quản lý Chung cư</div>
                           <div>Nội dung: {paymentRecord.id}</div>
                         </div>
                       </div>
@@ -974,7 +997,7 @@ export default () => {
                         <div style={{ textAlign: 'center', color: '#52c41a' }}>
                           <DollarOutlined style={{ fontSize: 24, marginBottom: 8 }} />
                           <div><strong>Thanh toán bằng tiền mặt</strong></div>
-                          <div>Hệ thống sẽ xác nhận thanh toán ngay lập tức</div>
+                          <div>Hệ thống sẽ ghi nhận thanh toán và chuyển trạng thái chờ xác nhận từ admin</div>
                         </div>
                       </div>
                     );
