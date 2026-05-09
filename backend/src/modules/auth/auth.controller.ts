@@ -1,7 +1,14 @@
 import { Request, Response } from "express";
 import { prisma } from "../../config/prisma";
-import { comparePassword } from "../../utils/hash";
+import { comparePassword, hashPassword } from "../../utils/hash";
 import { signToken } from "../../utils/jwt";
+
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    role: string;
+  };
+}
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -58,4 +65,43 @@ export const me = async (req: Request, res: Response) => {
   }
 
   res.json(user);
+};
+
+export const changePassword = async (req: AuthRequest, res: Response) => {
+  const userId = req.user?.id;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: "Current password and new password are required" });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: "New password must be at least 6 characters long" });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const isValid = await comparePassword(currentPassword, user.password);
+  if (!isValid) {
+    return res.status(400).json({ message: "Current password is incorrect" });
+  }
+
+  const hashedNewPassword = await hashPassword(newPassword);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedNewPassword },
+  });
+
+  res.json({ message: "Password changed successfully" });
 };
