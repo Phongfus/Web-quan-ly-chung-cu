@@ -16,31 +16,44 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import * as XLSX from 'xlsx';
 
+/**
+ * Component trang quản lý hóa đơn
+ * Hiển thị danh sách hóa đơn, cho phép thêm/sửa/xóa hóa đơn (admin)
+ * Cho phép thanh toán và xuất hóa đơn (cư dân)
+ */
 export default () => {
-  const intl = useIntl();
-  const access = useAccess();
-  const actionRef = useRef<ActionType>(null);
-  const billPreviewRef = useRef<HTMLDivElement>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<BillItem | null>(null);
-  const [form] = Form.useForm();
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentRecord, setPaymentRecord] = useState<BillItem | null>(null);
-  const [paymentForm] = Form.useForm();
-  const [exportModalOpen, setExportModalOpen] = useState(false);
-  const [exportRecord, setExportRecord] = useState<BillItem | null>(null);
-  const [allData, setAllData] = useState<BillItem[]>([]);
-  const [apartments, setApartments] = useState<ApartmentItem[]>([]);
-  const [quickSearch, setQuickSearch] = useState<string>('');
-  const [searchText, setSearchText] = useState<string>('');
-  const [filterRows, setFilterRows] = useState<FilterRowItem[]>([]);
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
-  const [monthYearSort, setMonthYearSort] = useState<SortDirection>(null);
-  const [electricityFeeSort, setElectricityFeeSort] = useState<SortDirection>(null);
-  const [waterFeeSort, setWaterFeeSort] = useState<SortDirection>(null);
-  const [serviceFeeSort, setServiceFeeSort] = useState<SortDirection>(null);
-  const [totalAmountSort, setTotalAmountSort] = useState<SortDirection>(null);
+  // Hook để quản lý trạng thái component
+  const intl = useIntl(); // Hook để đa ngôn ngữ
+  const access = useAccess(); // Hook để kiểm tra quyền truy cập
+  const actionRef = useRef<ActionType>(null); // Ref cho ProTable để reload dữ liệu
+  const billPreviewRef = useRef<HTMLDivElement>(null); // Ref cho preview hóa đơn khi xuất PDF
 
+  // Các state quản lý modal và form
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal thêm/sửa hóa đơn
+  const [editingRecord, setEditingRecord] = useState<BillItem | null>(null); // Hóa đơn đang chỉnh sửa
+  const [form] = Form.useForm(); // Form cho thêm/sửa hóa đơn
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false); // Modal thanh toán
+  const [paymentRecord, setPaymentRecord] = useState<BillItem | null>(null); // Hóa đơn đang thanh toán
+  const [paymentForm] = Form.useForm(); // Form cho thanh toán
+  const [exportModalOpen, setExportModalOpen] = useState(false); // Modal xuất hóa đơn
+  const [exportRecord, setExportRecord] = useState<BillItem | null>(null); // Hóa đơn đang xuất
+
+  // State quản lý dữ liệu và lọc
+  const [allData, setAllData] = useState<BillItem[]>([]); // Tất cả dữ liệu hóa đơn
+  const [apartments, setApartments] = useState<ApartmentItem[]>([]); // Danh sách căn hộ
+  const [quickSearch, setQuickSearch] = useState<string>(''); // Tìm kiếm nhanh
+  const [searchText, setSearchText] = useState<string>(''); // Text tìm kiếm
+  const [filterRows, setFilterRows] = useState<FilterRowItem[]>([]); // Các điều kiện lọc
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false); // Modal lọc nâng cao
+
+  // State quản lý sắp xếp
+  const [monthYearSort, setMonthYearSort] = useState<SortDirection>(null); // Sắp xếp theo tháng/năm
+  const [electricityFeeSort, setElectricityFeeSort] = useState<SortDirection>(null); // Sắp xếp theo tiền điện
+  const [waterFeeSort, setWaterFeeSort] = useState<SortDirection>(null); // Sắp xếp theo tiền nước
+  const [serviceFeeSort, setServiceFeeSort] = useState<SortDirection>(null); // Sắp xếp theo phí dịch vụ
+  const [totalAmountSort, setTotalAmountSort] = useState<SortDirection>(null); // Sắp xếp theo tổng tiền
+
+  // Hàm tải danh sách căn hộ
   const loadApartments = async () => {
     try {
       const data = await getApartments();
@@ -53,12 +66,14 @@ export default () => {
     loadApartments();
   }, []);
 
+  // Hàm xử lý thanh toán hóa đơn
   const handlePayment = (record: BillItem) => {
     setPaymentRecord(record);
     paymentForm.resetFields();
     setPaymentModalOpen(true);
   };
 
+  // Hàm submit thanh toán
   const handlePaymentSubmit = async (values: any) => {
     if (!paymentRecord) return;
 
@@ -85,6 +100,7 @@ export default () => {
     }
   };
 
+  // Hàm xác nhận thanh toán (dành cho admin)
   const handleConfirmBill = async (record: BillItem) => {
     try {
       await updateBill(record.id, {
@@ -97,20 +113,24 @@ export default () => {
     }
   };
 
+  // Hàm xử lý xuất hóa đơn
   const handleExport = (record: BillItem) => {
     setExportRecord(record);
     setExportModalOpen(true);
   };
 
+  // Hàm xác nhận xuất hóa đơn PDF
   const handleConfirmExport = async () => {
     if (!exportRecord || !billPreviewRef.current) return;
     try {
+      // Chụp ảnh preview hóa đơn
       const canvas = await html2canvas(billPreviewRef.current, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
       });
       const imgData = canvas.toDataURL('image/png');
+      // Tạo PDF
       const pdf = new jsPDF('p', 'mm', 'a4');
       const imgWidth = 210;
       const pageHeight = 295;
@@ -136,6 +156,7 @@ export default () => {
     }
   };
 
+  // Định nghĩa các cột của bảng hóa đơn
   const columns: ProColumns<BillItem>[] = [
     {
       title: intl.formatMessage({ id: 'pages.common.index' }),
@@ -160,10 +181,12 @@ export default () => {
       title: (
         <Space>
           {intl.formatMessage({ id: 'pages.bill.monthYear' })}
+          {/* Icon sắp xếp theo tháng/năm */}
           <SortIcon
             sortDirection={monthYearSort}
             onSort={(direction) => {
               setMonthYearSort(direction);
+              // Reset các sắp xếp khác
               setElectricityFeeSort(null);
               setWaterFeeSort(null);
               setServiceFeeSort(null);
@@ -194,6 +217,7 @@ export default () => {
           />
         </Space>
       ),
+      // Cột hiển thị tiền điện và cho phép sắp xếp
       dataIndex: 'electricityFee',
       width: 130,
       search: false,
@@ -215,6 +239,7 @@ export default () => {
           />
         </Space>
       ),
+      // Cột hiển thị tiền nước và cho phép sắp xếp
       dataIndex: 'waterFee',
       width: 130,
       search: false,
@@ -236,6 +261,7 @@ export default () => {
           />
         </Space>
       ),
+      // Cột hiển thị phí dịch vụ và cho phép sắp xếp
       dataIndex: 'serviceFee',
       width: 130,
       search: false,
@@ -257,6 +283,7 @@ export default () => {
           />
         </Space>
       ),
+      // Cột hiển thị tổng tiền và cho phép sắp xếp
       dataIndex: 'amount',
       width: 130,
       search: false,
@@ -264,6 +291,7 @@ export default () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.bill.dueDate' }),
+      // Cột hiển thị ngày đến hạn
       dataIndex: 'dueDate',
       width: 110,
       valueType: 'date',
@@ -271,6 +299,7 @@ export default () => {
     },
     {
       title: intl.formatMessage({ id: 'pages.bill.status' }),
+      // Cột hiển thị trạng thái hóa đơn với tag màu sắc
       dataIndex: 'status',
       width: 120,
       valueEnum: {
@@ -299,6 +328,7 @@ export default () => {
       valueType: 'option',
       width: 130,
       render: (_, record) => {
+        // Render các button hành động theo quyền và trạng thái hóa đơn
         console.log('Rendering actions for access.isResident:', access.isResident, 'record status:', record.status);
         if (access.isResident === true) {
           const canPayment = ['UNPAID', 'OVERDUE', 'UPCOMING_OVERDUE'].includes(record.status);
@@ -380,6 +410,7 @@ export default () => {
     },
   ];
 
+  // Hàm thêm hóa đơn mới
   const handleAdd = () => {
     setEditingRecord(null);
     form.resetFields();
@@ -387,6 +418,7 @@ export default () => {
     setIsModalOpen(true);
   };
 
+  // Hàm chỉnh sửa hóa đơn
   const handleEdit = (record: BillItem) => {
     setEditingRecord(record);
     form.setFieldsValue({
@@ -397,6 +429,7 @@ export default () => {
     setIsModalOpen(true);
   };
 
+  // Hàm xử lý thay đổi giá trị form để tính tổng tiền tự động
   const handleValuesChange = () => {
     const electricity = form.getFieldValue('electricityFee') || 0;
     const water = form.getFieldValue('waterFee') || 0;
@@ -405,6 +438,7 @@ export default () => {
     form.setFieldValue('amount', total);
   };
 
+  // Hàm xóa hóa đơn
   const handleDelete = async (id: string) => {
     Modal.confirm({
       title: intl.formatMessage({ id: 'pages.bill.deleteConfirm' }),
@@ -421,6 +455,7 @@ export default () => {
     });
   };
 
+  // Hàm submit form thêm/sửa hóa đơn
   const handleSubmit = async (values: any) => {
     try {
       const data = {
@@ -442,6 +477,7 @@ export default () => {
     }
   };
 
+  // Định nghĩa các trường lọc nâng cao
   const filterFields: FilterFieldDefinition[] = [
     { key: 'id', label: 'ID', type: 'text' },
     { key: 'apartmentCode', label: intl.formatMessage({ id: 'pages.bill.apartment' }), type: 'text' },
@@ -466,6 +502,7 @@ export default () => {
     },
   ];
 
+  // Hàm lấy giá trị của trường để lọc
   const getFieldValue = (item: BillItem, field: string) => {
     switch (field) {
       case 'apartmentCode':
@@ -475,6 +512,7 @@ export default () => {
     }
   };
 
+  // Hàm xử lý submit bộ lọc
   const handleFilterSubmit = (values: { quickSearch: string; filters: FilterRowItem[] }) => {
     setQuickSearch(values.quickSearch || '');
     setFilterRows(values.filters || []);
@@ -482,6 +520,7 @@ export default () => {
     actionRef.current?.reload();
   };
 
+  // Hàm xóa tất cả bộ lọc
   const handleClearFilters = () => {
     setQuickSearch('');
     setSearchText('');
@@ -490,6 +529,7 @@ export default () => {
     actionRef.current?.reload();
   };
 
+  // Hàm xuất Excel
   const handleExportExcel = () => {
     const data = allData.map(item => ({
       ID: item.id,
@@ -510,12 +550,14 @@ export default () => {
     message.success(intl.formatMessage({ id: 'pages.bill.exportExcelSuccess' }) || 'Xuất Excel thành công');
   };
 
+  // Hàm xử lý tìm kiếm nhanh
   const handleExternalSearch = (value: string) => {
     setQuickSearch(value);
     setSearchText(value);
     actionRef.current?.reload();
   };
 
+  // Hàm áp dụng toán tử lọc
   const applyOperator = (value: any, operator: string, compare: any) => {
     if (operator === 'isEmpty') {
       return value === undefined || value === null || value === '';
@@ -553,9 +595,11 @@ export default () => {
     }
   };
 
+  // Hàm lọc dữ liệu
   const filterData = (data: BillItem[]) => {
     let filtered = [...data];
 
+    // Lọc tìm kiếm nhanh
     if (quickSearch) {
       const term = quickSearch.trim().toLowerCase();
       filtered = filtered.filter((item) =>
@@ -563,6 +607,7 @@ export default () => {
       );
     }
 
+    // Lọc nâng cao
     if (filterRows.length > 0) {
       filtered = filtered.filter((item) =>
         filterRows.every((row) => {
@@ -578,7 +623,7 @@ export default () => {
       );
     }
 
-    // Apply sorting
+    // Áp dụng sắp xếp
     if (monthYearSort) {
       filtered = [...filtered].sort((a, b) => {
         const aDate = a.year * 100 + a.month;
@@ -610,7 +655,7 @@ export default () => {
         return totalAmountSort === 'asc' ? aValue - bValue : bValue - aValue;
       });
     } else {
-      // Default sort by ID (ascending: HD001 -> HD002)
+      // Sắp xếp mặc định theo ID (tăng dần: HD001 -> HD002)
       filtered = [...filtered].sort((a, b) => a.id.localeCompare(b.id));
     }
 
@@ -619,6 +664,7 @@ export default () => {
 
   return (
     <>
+      {/* Bảng chính hiển thị danh sách hóa đơn */}
       <ProTable<BillItem>
         headerTitle={intl.formatMessage({ id: 'pages.bill.title' })}
         actionRef={actionRef}
@@ -631,6 +677,7 @@ export default () => {
         }}
         scroll={{ x: 'max-content', y: 'max-content'}}
         toolBarRender={() => [
+          // Ô tìm kiếm nhanh
           <Input.Search
             key="search"
             placeholder={intl.formatMessage({ id: 'pages.bill.quickSearchPlaceholder' })}
@@ -640,15 +687,19 @@ export default () => {
             style={{ width: 240 }}
             allowClear
           />,
+          // Nút lọc nâng cao
           <Button key="filter" type="default" onClick={() => setFilterDrawerOpen(true)}>
             {intl.formatMessage({ id: 'components.advancedFilter.open' })}
           </Button>,
+          // Nút xóa bộ lọc
           <Button key="clearFilters" onClick={handleClearFilters}>
             {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
           </Button>,
+          // Nút xuất Excel
           <Button key="exportExcel" type="default" icon={<FileExcelOutlined />} onClick={handleExportExcel}>
             {intl.formatMessage({ id: 'pages.bill.exportExcel' }) || 'Xuất Excel'}
           </Button>,
+          // Nút thêm hóa đơn mới (chỉ admin)
           ...(access.isResident
             ? []
             : [
@@ -668,6 +719,7 @@ export default () => {
         }}
         columns={columns}
         summary={() => {
+          // Tính tổng các khoản phí
           const totalElectricityFee = allData.reduce((sum, item) => sum + (item.electricityFee || 0), 0);
           const totalWaterFee = allData.reduce((sum, item) => sum + (item.waterFee || 0), 0);
           const totalServiceFee = allData.reduce((sum, item) => sum + (item.serviceFee || 0), 0);
@@ -696,6 +748,7 @@ export default () => {
         }}
       />
 
+      {/* Drawer lọc nâng cao */}
       <AdvancedFilterDrawer
         visible={filterDrawerOpen}
         onClose={() => setFilterDrawerOpen(false)}
@@ -707,6 +760,7 @@ export default () => {
         initialFilters={filterRows}
       />
 
+      {/* Modal xuất hóa đơn PDF */}
       <Modal
         title={intl.formatMessage({ id: 'pages.bill.exportModalTitle' }) || 'Xem trước hóa đơn'}
         open={exportModalOpen}
@@ -724,6 +778,7 @@ export default () => {
       >
         {exportRecord && (
           <div>
+            {/* Preview hóa đơn */}
             <div
               ref={billPreviewRef}
               style={{
@@ -738,6 +793,7 @@ export default () => {
                 margin: '0 auto',
               }}
             >
+              {/* Header hóa đơn */}
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <div style={{ fontSize: '18px', fontWeight: 'bold' }}>CHUNG CƯ DUCKLING</div>
                 <div>Địa chỉ: 123 Cầu Giấy, Hà Nội</div>
@@ -747,6 +803,7 @@ export default () => {
               <div style={{ textAlign: 'center', fontSize: '16px', fontWeight: 'bold', marginBottom: '20px' }}>
                 HÓA ĐƠN THANH TOÁN
               </div>
+              {/* Thông tin hóa đơn */}
               <div style={{ marginBottom: '10px' }}>
                 <strong>Mã hóa đơn:</strong> {exportRecord.id}
               </div>
@@ -758,6 +815,7 @@ export default () => {
                 <div><strong>Căn hộ:</strong> {exportRecord.apartment?.code}</div>
                 <div><strong>Tháng/Năm:</strong> {exportRecord.month}/{exportRecord.year}</div>
               </div>
+              {/* Chi tiết thanh toán */}
               <div style={{ marginBottom: '20px' }}>
                 <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>Chi tiết thanh toán :</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -781,6 +839,7 @@ export default () => {
               <div style={{ marginBottom: '10px' }}>
                 <strong>Trạng thái:</strong> {exportRecord.status === 'PAID' ? 'ĐÃ THANH TOÁN' : 'CHƯA THANH TOÁN'}
               </div>
+              {/* Thông tin thanh toán nếu đã thanh toán */}
               {exportRecord.status === 'PAID' && exportRecord.payments && exportRecord.payments.length > 0 && (
                 <>
                   <div style={{ marginBottom: '10px' }}>
@@ -803,6 +862,7 @@ export default () => {
         )}
       </Modal>
 
+      {/* Modal thêm/sửa hóa đơn */}
       <Modal
         title={editingRecord 
           ? intl.formatMessage({ id: 'pages.bill.editTitle' }) 
@@ -813,6 +873,7 @@ export default () => {
         destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit} onValuesChange={handleValuesChange}>
+          {/* Chọn căn hộ */}
           <Form.Item
             name="apartmentId"
             label={intl.formatMessage({ id: 'pages.bill.apartment' })}
@@ -833,6 +894,7 @@ export default () => {
               }))}
             />
           </Form.Item>
+          {/* Nhập tháng */}
           <Form.Item
             name="month"
             label={intl.formatMessage({ id: 'pages.bill.month' })}
@@ -840,6 +902,7 @@ export default () => {
           >
             <InputNumber min={1} max={12} style={{ width: '100%' }} placeholder={intl.formatMessage({ id: 'pages.bill.monthPlaceholder' })} />
           </Form.Item>
+          {/* Nhập năm */}
           <Form.Item
             name="year"
             label={intl.formatMessage({ id: 'pages.bill.year' })}
@@ -847,30 +910,35 @@ export default () => {
           >
             <InputNumber min={2000} max={2100} style={{ width: '100%' }} placeholder={intl.formatMessage({ id: 'pages.bill.yearPlaceholder' })} />
           </Form.Item>
+          {/* Nhập tiền điện */}
           <Form.Item
             name="electricityFee"
             label={intl.formatMessage({ id: 'pages.bill.electricityFee' })}
           >
             <InputNumber style={{ width: '100%' }} placeholder={intl.formatMessage({ id: 'pages.bill.electricityFeePlaceholder' })} />
           </Form.Item>
+          {/* Nhập tiền nước */}
           <Form.Item
             name="waterFee"
             label={intl.formatMessage({ id: 'pages.bill.waterFee' })}
           >
             <InputNumber style={{ width: '100%' }} placeholder={intl.formatMessage({ id: 'pages.bill.waterFeePlaceholder' })} />
           </Form.Item>
+          {/* Nhập phí dịch vụ */}
           <Form.Item
             name="serviceFee"
             label={intl.formatMessage({ id: 'pages.bill.serviceFee' })}
           >
             <InputNumber style={{ width: '100%' }} placeholder={intl.formatMessage({ id: 'pages.bill.serviceFeePlaceholder' })} />
           </Form.Item>
+          {/* Hiển thị tổng tiền (tự động tính) */}
           <Form.Item
             name="amount"
             label={intl.formatMessage({ id: 'pages.bill.totalAmount' })}
           >
             <InputNumber style={{ width: '100%' }} disabled placeholder={intl.formatMessage({ id: 'pages.bill.amountPlaceholder' })} />
           </Form.Item>
+          {/* Chọn ngày đến hạn */}
           <Form.Item
             name="dueDate"
             label={intl.formatMessage({ id: 'pages.bill.dueDate' })}
@@ -878,6 +946,7 @@ export default () => {
           >
             <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
           </Form.Item>
+          {/* Chọn trạng thái */}
           <Form.Item
             name="status"
             label={intl.formatMessage({ id: 'pages.bill.status' })}
@@ -904,6 +973,7 @@ export default () => {
         </Form>
       </Modal>
 
+      {/* Modal thanh toán */}
       <Modal
         title={intl.formatMessage({ id: 'pages.bill.paymentModalTitle' }) || 'Thanh toán hóa đơn'}
         open={paymentModalOpen}
@@ -942,6 +1012,7 @@ export default () => {
       >
         {paymentRecord && (
           <div>
+            {/* Thông tin hóa đơn cần thanh toán */}
             <Card size="small" style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span><strong>{intl.formatMessage({ id: 'pages.bill.apartment' })}:</strong></span>
@@ -961,7 +1032,9 @@ export default () => {
 
             <Divider />
 
+            {/* Form thanh toán */}
             <Form form={paymentForm} layout="vertical" onFinish={handlePaymentSubmit}>
+              {/* Chọn phương thức thanh toán */}
               <Form.Item
                 name="paymentMethod"
                 label={intl.formatMessage({ id: 'pages.bill.paymentMethod' }) || 'Phương thức thanh toán'}
@@ -985,6 +1058,7 @@ export default () => {
                 </Radio.Group>
               </Form.Item>
 
+              {/* Hiển thị thông tin thanh toán theo phương thức */}
               <Form.Item
                 noStyle
                 shouldUpdate={(prevValues, currentValues) => prevValues.paymentMethod !== currentValues.paymentMethod}
@@ -1030,6 +1104,7 @@ export default () => {
                 }}
               </Form.Item>
 
+              {/* Nhập ghi chú */}
               <Form.Item
                 name="notes"
                 label={intl.formatMessage({ id: 'pages.bill.paymentNotes' }) || 'Ghi chú'}

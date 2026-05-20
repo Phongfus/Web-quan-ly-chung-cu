@@ -21,6 +21,12 @@ import { getApartmentTypes, ApartmentTypeItem } from "@/services/apartmentType";
 
 const { Option } = Select;
 
+/**
+ * Trang quản lý căn hộ
+ * - Hiển thị danh sách căn hộ
+ * - Cho phép lọc, tìm kiếm, sắp xếp
+ * - Cho phép admin thêm/sửa/xóa căn hộ
+ */
 export default () => {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
@@ -40,6 +46,9 @@ export default () => {
   const [rentPriceSort, setRentPriceSort] = useState<SortDirection>(null);
   const [areaSort, setAreaSort] = useState<SortDirection>(null);
 
+  // State dùng để lưu dữ liệu danh sách căn hộ, bộ lọc, và trạng thái modal
+
+  // Hàm tải dữ liệu phụ trợ: danh sách tầng và loại căn hộ
   const loadMetaData = async () => {
     try {
       const [floorsData, typesData] = await Promise.all([
@@ -57,6 +66,7 @@ export default () => {
     loadMetaData();
   }, []);
 
+  // Hàm trả về màu tag theo trạng thái căn hộ
   const getStatusColor = (status: string) => {
     switch (status) {
       case "AVAILABLE":
@@ -73,6 +83,7 @@ export default () => {
     }
   };
 
+  // Hàm chuyển trạng thái sang text đa ngôn ngữ
   const getStatusText = (status: string) => {
     switch (status) {
       case "AVAILABLE":
@@ -89,6 +100,7 @@ export default () => {
     }
   };
 
+  // Định nghĩa các trường lọc cho drawer lọc nâng cao
   const filterFields: FilterFieldDefinition[] = [
     { key: 'id', label: 'ID', type: 'text' },
     { key: 'code', label: intl.formatMessage({ id: 'pages.apartment.code' }), type: 'text' },
@@ -111,6 +123,7 @@ export default () => {
     { key: 'area', label: intl.formatMessage({ id: 'pages.apartment.area' }), type: 'number' },
   ];
 
+  // Lấy giá trị cho bộ lọc theo trường mở rộng
   const getFieldValue = (item: ApartmentItem, field: string) => {
     switch (field) {
       case 'floorNumber':
@@ -124,6 +137,7 @@ export default () => {
     }
   };
 
+  // Định nghĩa các cột hiển thị trong bảng căn hộ
   const columns: ProColumns<ApartmentItem>[] = [
     {
       title: intl.formatMessage({ id: 'pages.common.index' }),
@@ -248,6 +262,7 @@ export default () => {
       title: intl.formatMessage({ id: 'pages.apartment.status' }),
       dataIndex: "status",
       width: 90,
+      // Hiển thị trạng thái căn hộ với tag màu
       render: (_, record) => (
         <Tag color={getStatusColor(record.status)}>
           {getStatusText(record.status)}
@@ -261,6 +276,7 @@ export default () => {
         title: intl.formatMessage({ id: 'pages.apartment.actions' }),
         valueType: 'option' as const,
         width: 180,
+        // Các nút hành động chỉ dành cho người không phải cư dân
         render: (_: unknown, record: ApartmentItem) => [
           <Button
             key="edit"
@@ -284,18 +300,21 @@ export default () => {
     ]),
   ];
 
+  // Mở modal để tạo căn hộ mới
   const handleAdd = () => {
     setEditingRecord(null);
     form.resetFields();
     setIsModalOpen(true);
   };
 
+  // Mở modal để chỉnh sửa căn hộ đã chọn
   const handleEdit = (record: ApartmentItem) => {
     setEditingRecord(record);
     form.setFieldsValue(record);
     setIsModalOpen(true);
   };
 
+  // Xóa căn hộ sau khi xác nhận
   const handleDelete = async (id: string) => {
     Modal.confirm({
       title: intl.formatMessage({ id: 'pages.apartment.deleteConfirm' }),
@@ -312,6 +331,7 @@ export default () => {
     });
   };
 
+  // Xử lý submit form thêm/sửa căn hộ
   const handleSubmit = async (values: any) => {
     try {
       const data = { ...values };
@@ -340,6 +360,7 @@ export default () => {
     }
   };
 
+  // Áp dụng toán tử lọc cho chức năng lọc nâng cao
   const applyOperator = (value: any, operator: string, compare: any) => {
     if (operator === 'isEmpty') {
       return value === undefined || value === null || value === '';
@@ -377,6 +398,7 @@ export default () => {
     }
   };
 
+  // Hàm lọc dữ liệu trước khi render lên bảng
   const filterData = (data: ApartmentItem[]) => {
     let filtered = [...data];
 
@@ -403,7 +425,7 @@ export default () => {
       );
     }
 
-    // Apply sorting
+    // Áp dụng sắp xếp
     if (salePriceSort) {
       filtered = [...filtered].sort((a, b) => {
         const aValue = a.salePrice || 0;
@@ -443,6 +465,7 @@ export default () => {
 
   return (
     <>
+      {/* Bảng chính quản lý danh sách căn hộ */}
       <ProTable<ApartmentItem>
         headerTitle={intl.formatMessage({ id: 'pages.apartment.title' })}
         actionRef={actionRef}
@@ -537,6 +560,7 @@ export default () => {
         initialFilters={filterRows}
       />
 
+      {/* Modal thêm / sửa căn hộ */}
       <Modal
         title={editingRecord
           ? intl.formatMessage({ id: 'pages.apartment.editTitle' })
