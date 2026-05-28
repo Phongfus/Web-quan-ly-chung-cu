@@ -281,7 +281,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
     });
 
     res.json({
-      unreadNotifications: count,
+      count,
     });
   } catch (error: any) {
     console.error("Get unread count error:", error);
@@ -432,20 +432,65 @@ export const updateNotification = async (req: Request, res: Response) => {
 export const deleteNotification = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role;
 
-    const notification = await prisma.notification.findUnique({
-      where: { id: id as string },
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const io = getSocketServer();
+
+    if (userRole === "ADMIN") {
+      const notification = await prisma.notification.findUnique({
+        where: { id: id as string },
+      });
+
+      if (!notification) {
+        return res.status(404).json({
+          message: "Thông báo không tồn tại",
+        });
+      }
+
+      await prisma.notification.delete({
+        where: { id: id as string },
+      });
+
+      res.json({
+        message: "Đã xóa thông báo",
+      });
+      return;
+    }
+
+    const target = await prisma.notificationTarget.findFirst({
+      where: {
+        notificationId: id as string,
+        userId,
+      },
     });
 
-    if (!notification) {
+    if (!target) {
       return res.status(404).json({
         message: "Thông báo không tồn tại",
       });
     }
 
-    await prisma.notification.delete({
-      where: { id: id as string },
+    await prisma.notificationTarget.delete({
+      where: { id: target.id },
     });
+
+    if (io) {
+      const unreadCount = await prisma.notificationTarget.count({
+        where: {
+          userId,
+          isRead: false,
+        },
+      });
+
+      io.to(`user:${userId}`).emit("notification:count-updated", {
+        unreadCount,
+      });
+    }
 
     res.json({
       message: "Đã xóa thông báo",

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Modal, Form, Input, Select, message, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
+import { useIntl, useModel } from '@umijs/max';
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
@@ -17,6 +17,9 @@ const { Option } = Select;
 
 export default () => {
   const intl = useIntl();
+  const { initialState } = useModel('@@initialState');
+  const currentUser = initialState?.currentUser;
+  const isResident = currentUser?.role === 'RESIDENT';
   const actionRef = useRef<ActionType | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<VehicleItem | null>(null);
@@ -280,25 +283,29 @@ export default () => {
       key: 'action',
       width: 130,
       search: false,
-      render: (_, record) => (
-        <Space size="middle">
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            {intl.formatMessage({ id: 'pages.vehicle.edit' })}
-          </Button>
-          <Button
-            type="link"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-          >
-            {intl.formatMessage({ id: 'pages.vehicle.delete' })}
-          </Button>
-        </Space>
-      ),
+      hideInTable: isResident,
+      render: (_, record) => {
+        if (isResident) return null;
+        return (
+          <Space size="middle">
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            >
+              {intl.formatMessage({ id: 'pages.vehicle.edit' })}
+            </Button>
+            <Button
+              type="link"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record)}
+            >
+              {intl.formatMessage({ id: 'pages.vehicle.delete' })}
+            </Button>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -350,31 +357,40 @@ export default () => {
           defaultPageSize: 10,
         }}
         scroll={{ x: 'max-content', y: 'max-content' }}
-        toolBarRender={() => [
-          <Input.Search
-            key="search"
-            placeholder={intl.formatMessage({ id: 'pages.vehicle.quickSearchPlaceholder' })}
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-            onSearch={handleExternalSearch}
-            style={{ width: 240 }}
-            allowClear
-          />,
-          <Button key="filter" type="default" onClick={() => setFilterDrawerOpen(true)}>
-            {intl.formatMessage({ id: 'components.advancedFilter.open' })}
-          </Button>,
-          <Button key="clearFilters" onClick={handleClearFilters}>
-            {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
-          </Button>,
-          <Button
-            key="button"
-            icon={<PlusOutlined />}
-            onClick={handleAdd}
-            type="primary"
-          >
-            {intl.formatMessage({ id: 'pages.vehicle.addNew' })}
-          </Button>,
-        ]}
+        toolBarRender={() => {
+          const toolbarItems = [
+            <Input.Search
+              key="search"
+              placeholder={intl.formatMessage({ id: 'pages.vehicle.quickSearchPlaceholder' })}
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              onSearch={handleExternalSearch}
+              style={{ width: 240 }}
+              allowClear
+            />,
+            <Button key="filter" type="default" onClick={() => setFilterDrawerOpen(true)}>
+              {intl.formatMessage({ id: 'components.advancedFilter.open' })}
+            </Button>,
+            <Button key="clearFilters" onClick={handleClearFilters}>
+              {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
+            </Button>,
+          ];
+
+          if (!isResident) {
+            toolbarItems.push(
+              <Button
+                key="button"
+                icon={<PlusOutlined />}
+                onClick={handleAdd}
+                type="primary"
+              >
+                {intl.formatMessage({ id: 'pages.vehicle.addNew' })}
+              </Button>,
+            );
+          }
+
+          return toolbarItems;
+        }}
         request={async () => {
           try {
             const data = await getVehicles();

@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Tag, message, Form, Input, Select, Divider, Row, Col, Card, Typography, Space, Modal } from 'antd';
-import { CheckCircleOutlined, BellOutlined, EyeOutlined } from '@ant-design/icons';
+import { Button, Tag, message, Form, Input, Select, Divider, Row, Col, Card, Typography, Space, Modal, Popconfirm } from 'antd';
+import { CheckCircleOutlined, BellOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { useAccess } from '@umijs/max';
-import { getNotifications, markAsRead, markAllAsRead, NotificationItem, getUnreadCount, createNotification } from '@/services/notification';
+import { getNotifications, markAsRead, markAllAsRead, NotificationItem, getUnreadCount, createNotification, deleteNotification } from '@/services/notification';
 import { getResidents, ResidentItem } from '@/services/resident';
 import { getApartments, ApartmentItem } from '@/services/apartment';
 import { on } from '@/services/socket';
@@ -179,6 +179,21 @@ export default () => {
     }
   };
 
+  const handleDeleteNotification = async (record: NotificationItem) => {
+    try {
+      await deleteNotification(record.id);
+      message.success('Đã xóa thông báo');
+      actionRef.current?.reload();
+      loadUnreadCount();
+      if (selectedNotification?.id === record.id) {
+        setDetailModalVisible(false);
+        setSelectedNotification(null);
+      }
+    } catch (error) {
+      message.error('Không thể xóa thông báo');
+    }
+  };
+
   const handleCreate = async (values: any) => {
     const userIds = getTargetUserIds();
 
@@ -261,30 +276,42 @@ export default () => {
     },
     {
       title: 'Thao tác',
-      width: 180,
+      width: 240,
       fixed: 'right',
-      render: (_, record) => [
-        <Button
-          key="view"
-          type="link"
-          icon={<EyeOutlined />}
-          onClick={() => handleViewDetail(record)}
-          style={{ padding: '0 8px' }}
-        >
-          Xem chi tiết
-        </Button>,
-        !record.isRead && (
+      render: (_, record) => (
+        <Space size="small">
           <Button
-            key="read"
-            type="link"
-            icon={<CheckCircleOutlined />}
-            onClick={() => handleMarkAsRead(record)}
-            style={{ padding: '0 8px' }}
+            key="view"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetail(record)}
           >
-            Đánh dấu đã đọc
+            Chi tiết
           </Button>
-        ),
-      ].filter(Boolean),
+          {!record.isRead && (
+            <Button
+              key="read"
+              type="primary"
+              size="small"
+              icon={<CheckCircleOutlined />}
+              onClick={() => handleMarkAsRead(record)}
+            >
+              Đã đọc
+            </Button>
+          )}
+          <Popconfirm
+            key="delete"
+            title="Bạn có chắc muốn xóa thông báo này?"
+            onConfirm={() => handleDeleteNotification(record)}
+            okText="Xóa"
+            cancelText="Hủy"
+          >
+            <Button key="deleteBtn" danger size="small" icon={<DeleteOutlined />}>
+              Xóa
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
     },
   ];
 

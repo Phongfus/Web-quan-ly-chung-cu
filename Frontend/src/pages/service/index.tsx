@@ -19,7 +19,9 @@ export default () => {
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const isResident = currentUser?.role === 'RESIDENT';
-  
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const serviceStatusSequence = ['PENDING', 'PROCESSING', 'DONE'] as const;
+
   const actionRef = useRef<ActionType | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ServiceItem | null>(null);
@@ -83,6 +85,26 @@ export default () => {
     return statusMap[status] || { text: status, color: 'default' };
   };
 
+  const getNextServiceStatus = (status: ServiceItem['status']) => {
+    const index = serviceStatusSequence.indexOf(status);
+    if (index < 0) return status;
+    return serviceStatusSequence[(index + 1) % serviceStatusSequence.length];
+  };
+
+  const handleStatusClick = async (record: ServiceItem) => {
+    if (!isAdmin) return;
+    const nextStatus = getNextServiceStatus(record.status);
+    if (nextStatus === record.status) return;
+
+    try {
+      await updateService(record.id, { status: nextStatus });
+      message.success(intl.formatMessage({ id: 'pages.service.statusUpdateSuccess' }) || 'Cập nhật trạng thái thành công');
+      actionRef.current?.reload();
+    } catch (error) {
+      message.error(intl.formatMessage({ id: 'pages.service.statusUpdateError' }) || 'Cập nhật trạng thái thất bại');
+    }
+  };
+
   const columns: ProColumns<ServiceItem>[] = [
     {
       title: 'STT',
@@ -143,7 +165,15 @@ export default () => {
       },
       render: (_, record) => {
         const status = getStatusConfig(record.status);
-        return <Tag color={status.color}>{status.text}</Tag>;
+        return (
+          <Tag
+            color={status.color}
+            style={{ cursor: isAdmin ? 'pointer' : 'default' }}
+            onClick={() => isAdmin && handleStatusClick(record)}
+          >
+            {status.text}
+          </Tag>
+        );
       },
     },
     {

@@ -25,6 +25,6 @@ router.put("/mark-all-read", markAllAsRead);
 // Admin only routes
 router.post("/", requireRole("ADMIN"), createNotification);
 router.put("/:id", requireRole("ADMIN"), updateNotification);
-router.delete("/:id", requireRole("ADMIN"), deleteNotification);
+router.delete("/:id", deleteNotification);
 
 export default router;
