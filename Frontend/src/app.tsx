@@ -62,7 +62,7 @@ export async function getInitialState(): Promise<InitialState> {
     let unreadNotifications = 0;
     if (unreadRes.ok) {
       const unreadData = await unreadRes.json();
-      unreadNotifications = unreadData.unreadNotifications || 0;
+      unreadNotifications = unreadData.count ?? 0;
     }
 
     return { currentUser: user, unreadNotifications };

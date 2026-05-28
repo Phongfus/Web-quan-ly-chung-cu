@@ -702,7 +702,13 @@ export default () => {
             {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
           </Button>,
           // Nút xuất Excel
-          <Button key="exportExcel" type="default" icon={<FileExcelOutlined />} onClick={handleExportExcel}>
+          <Button
+            key="exportExcel"
+            type="primary"
+            icon={<FileExcelOutlined />}
+            onClick={handleExportExcel}
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: '#fff' }}
+          >
             {intl.formatMessage({ id: 'pages.bill.exportExcel' }) || 'Xuất Excel'}
           </Button>,
           // Nút thêm hóa đơn mới (chỉ admin)

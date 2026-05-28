@@ -128,6 +128,7 @@ export default () => {
   const handleAdd = () => {
     setEditingRecord(null);
     form.resetFields();
+    form.setFieldsValue({ email: '' });
     loadApartments(true); // Tải căn hộ có sẵn
     setIsModalOpen(true);
   };
@@ -162,14 +163,22 @@ export default () => {
     });
   };
 
+  const normalizeResidentEmail = (email: string) => {
+    const localPart = String(email || '').trim().split('@')[0];
+    return `${localPart}@gmail.com`;
+  };
+
   const handleSubmit = async (values: any) => {
     try {
-      console.log('Submit values:', values); 
+      const payload = editingRecord
+        ? values
+        : { ...values, email: normalizeResidentEmail(values.email) };
+
       if (editingRecord) {
-        await updateResident(editingRecord.id, values);
+        await updateResident(editingRecord.id, payload);
         message.success(intl.formatMessage({ id: 'pages.resident.updateSuccess' }));
       } else {
-        await createResident(values);
+        await createResident(payload);
         message.success(intl.formatMessage({ id: 'pages.resident.createSuccess' }));
       }
       setIsModalOpen(false);
@@ -395,10 +404,24 @@ export default () => {
                 label={intl.formatMessage({ id: 'pages.resident.email' })}
                 rules={[
                   { required: true, message: intl.formatMessage({ id: 'pages.resident.emailRequired' }) },
-                  { type: 'email', message: intl.formatMessage({ id: 'pages.resident.emailInvalid' }) }
+                  {
+                    validator: (_, value) => {
+                      if (!value || String(value).trim() === '') {
+                        return Promise.reject(new Error(intl.formatMessage({ id: 'pages.resident.emailRequired' })));
+                      }
+                      if (String(value).includes('@')) {
+                        return Promise.reject(new Error('Vui lòng chỉ nhập phần trước @gmail.com'));
+                      }
+                      return Promise.resolve();
+                    },
+                  },
                 ]}
               >
-                <Input placeholder={intl.formatMessage({ id: 'pages.resident.emailPlaceholder' })} />
+                <Input
+                  placeholder=""
+                  addonAfter="@gmail.com"
+                  autoComplete="off"
+                />
               </Form.Item>
               <Form.Item
                 name="password"
@@ -443,12 +466,16 @@ export default () => {
           </Form.Item>
           <Form.Item
             name="apartmentStatus"
-            label="Trạng thái căn hộ"
-            rules={[{ required: !editingRecord, message: 'Vui lòng chọn trạng thái căn hộ' }]}
+            label={intl.formatMessage({ id: 'pages.resident.apartmentStatus' })}
+            rules={[{ required: !editingRecord, message: intl.formatMessage({ id: 'pages.resident.apartmentStatusRequired' }) }]}
           >
-            <Select placeholder="Chọn trạng thái căn hộ">
-              <Select.Option value="RENTED">Thuê nhà</Select.Option>
-              <Select.Option value="SOLD">Nhà mua</Select.Option>
+            <Select placeholder={intl.formatMessage({ id: 'pages.resident.apartmentStatusPlaceholder' })}>
+              <Select.Option value="RENTED">
+                {intl.formatMessage({ id: 'pages.resident.apartmentStatus.rented' })}
+              </Select.Option>
+              <Select.Option value="SOLD">
+                {intl.formatMessage({ id: 'pages.resident.apartmentStatus.sold' })}
+              </Select.Option>
             </Select>
           </Form.Item>
           <Form.Item

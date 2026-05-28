@@ -2,24 +2,24 @@ import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, message, Form, Input, Select, Divider, Row, Col, Card, Typography, Space, Modal, Popconfirm } from 'antd';
 import { CheckCircleOutlined, BellOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl, useModel } from '@umijs/max';
 import { getNotifications, markAsRead, markAllAsRead, NotificationItem, getUnreadCount, createNotification, deleteNotification } from '@/services/notification';
 import { getResidents, ResidentItem } from '@/services/resident';
 import { getApartments, ApartmentItem } from '@/services/apartment';
 import { on } from '@/services/socket';
 import { initSocketClient, connectSocket } from '@/services/socket';
-import { useModel } from '@umijs/max';
 
-const recipientModes = [
-  { label: 'Chọn tất cả cư dân', value: 'all' },
-  { label: 'Chọn theo tầng', value: 'floor' },
-  { label: 'Chọn theo căn hộ', value: 'apartment' },
-  { label: 'Chọn từng cư dân', value: 'users' },
-] as const;
-
-type RecipientMode = (typeof recipientModes)[number]['value'];
+type RecipientMode = 'all' | 'floor' | 'apartment' | 'users';
 
 export default () => {
+  const intl = useIntl();
+
+  const recipientModeOptions: { label: string; value: RecipientMode }[] = [
+    { label: intl.formatMessage({ id: 'pages.notification.recipientMode.all' }), value: 'all' },
+    { label: intl.formatMessage({ id: 'pages.notification.recipientMode.floor' }), value: 'floor' },
+    { label: intl.formatMessage({ id: 'pages.notification.recipientMode.apartment' }), value: 'apartment' },
+    { label: intl.formatMessage({ id: 'pages.notification.recipientMode.users' }), value: 'users' },
+  ];
   const actionRef = useRef<ActionType | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const access = useAccess();
@@ -132,7 +132,7 @@ export default () => {
   ).sort((a, b) => a - b);
 
   const residentOptions = residents.map((resident) => ({
-    label: `${resident.user.fullName} (${resident.apartment?.code ?? 'Chưa có căn hộ'})`,
+    label: `${resident.user.fullName} (${resident.apartment?.code ?? intl.formatMessage({ id: 'pages.notification.noApartment' })})`,
     value: resident.user.id,
   }));
 
@@ -172,17 +172,17 @@ export default () => {
   const handleMarkAsRead = async (record: NotificationItem) => {
     try {
       await markAsRead(record.id);
-      message.success('Đã đánh dấu đã đọc');
+      message.success(intl.formatMessage({ id: 'pages.notification.messages.markReadSuccess' }));
       // Socket event will automatically update the table and unread count
     } catch (error) {
-      message.error('Không thể đánh dấu đã đọc');
+      message.error(intl.formatMessage({ id: 'pages.notification.messages.markReadError' }));
     }
   };
 
   const handleDeleteNotification = async (record: NotificationItem) => {
     try {
       await deleteNotification(record.id);
-      message.success('Đã xóa thông báo');
+      message.success(intl.formatMessage({ id: 'pages.notification.messages.deleteSuccess' }));
       actionRef.current?.reload();
       loadUnreadCount();
       if (selectedNotification?.id === record.id) {
@@ -190,7 +190,7 @@ export default () => {
         setSelectedNotification(null);
       }
     } catch (error) {
-      message.error('Không thể xóa thông báo');
+      message.error(intl.formatMessage({ id: 'pages.notification.messages.deleteError' }));
     }
   };
 
@@ -198,7 +198,7 @@ export default () => {
     const userIds = getTargetUserIds();
 
     if (!userIds.length) {
-      message.error('Không có người nhận hợp lệ cho lựa chọn này');
+      message.error(intl.formatMessage({ id: 'pages.notification.messages.invalidRecipient' }));
       return;
     }
 
@@ -208,24 +208,24 @@ export default () => {
         content: values.content,
         userIds,
       });
-      message.success('Đã tạo thông báo');
+      message.success(intl.formatMessage({ id: 'pages.notification.messages.createSuccess' }));
       form.resetFields();
       setRecipientMode('all');
       setSelectedFloor(undefined);
       setSelectedApartment(undefined);
       actionRef.current?.reload();
     } catch (error) {
-      message.error('Không thể tạo thông báo');
+      message.error(intl.formatMessage({ id: 'pages.notification.messages.createError' }));
     }
   };
 
   const handleMarkAllAsRead = async () => {
     try {
       await markAllAsRead();
-      message.success('Đã đánh dấu tất cả đã đọc');
+      message.success(intl.formatMessage({ id: 'pages.notification.messages.allReadSuccess' }));
       // Socket event will automatically update the table and unread count
     } catch (error) {
-      message.error('Không thể đánh dấu tất cả đã đọc');
+      message.error(intl.formatMessage({ id: 'pages.notification.messages.allReadError' }));
     }
   };
 
@@ -246,36 +246,38 @@ export default () => {
 
   const columns: ProColumns<NotificationItem>[] = [
     {
-      title: 'Tiêu đề',
+      title: intl.formatMessage({ id: 'pages.notification.table.title' }),
       dataIndex: 'title',
       width: 200,
       ellipsis: true,
     },
     {
-      title: 'Nội dung',
+      title: intl.formatMessage({ id: 'pages.notification.table.content' }),
       dataIndex: 'content',
       width: 300,
       ellipsis: true,
     },
     {
-      title: 'Trạng thái',
+      title: intl.formatMessage({ id: 'pages.notification.table.status' }),
       dataIndex: 'isRead',
       width: 120,
       render: (isRead) => (
         <Tag color={isRead ? 'green' : 'orange'}>
-          {isRead ? 'Đã đọc' : 'Chưa đọc'}
+          {isRead
+            ? intl.formatMessage({ id: 'pages.notification.status.read' })
+            : intl.formatMessage({ id: 'pages.notification.status.unread' })}
         </Tag>
       ),
     },
     {
-      title: 'Thời gian',
+      title: intl.formatMessage({ id: 'pages.notification.table.time' }),
       dataIndex: 'createdAt',
       width: 150,
       valueType: 'dateTime',
       sorter: true,
     },
     {
-      title: 'Thao tác',
+      title: intl.formatMessage({ id: 'pages.notification.table.actions' }),
       width: 240,
       fixed: 'right',
       render: (_, record) => (
@@ -286,7 +288,7 @@ export default () => {
             icon={<EyeOutlined />}
             onClick={() => handleViewDetail(record)}
           >
-            Chi tiết
+            {intl.formatMessage({ id: 'pages.notification.action.detail' })}
           </Button>
           {!record.isRead && (
             <Button
@@ -296,18 +298,18 @@ export default () => {
               icon={<CheckCircleOutlined />}
               onClick={() => handleMarkAsRead(record)}
             >
-              Đã đọc
+              {intl.formatMessage({ id: 'pages.notification.action.markRead' })}
             </Button>
           )}
           <Popconfirm
             key="delete"
-            title="Bạn có chắc muốn xóa thông báo này?"
+            title={intl.formatMessage({ id: 'pages.notification.deleteConfirm' })}
             onConfirm={() => handleDeleteNotification(record)}
-            okText="Xóa"
-            cancelText="Hủy"
+            okText={intl.formatMessage({ id: 'pages.notification.deleteOk' })}
+            cancelText={intl.formatMessage({ id: 'pages.notification.deleteCancel' })}
           >
             <Button key="deleteBtn" danger size="small" icon={<DeleteOutlined />}>
-              Xóa
+              {intl.formatMessage({ id: 'pages.notification.action.delete' })}
             </Button>
           </Popconfirm>
         </Space>
@@ -317,43 +319,43 @@ export default () => {
 
   if (access.isAdmin) {
     const formValues = form.getFieldsValue();
-    const previewTitle = formValues.title || 'Tiêu đề thông báo';
-    const previewContent = formValues.content || 'Nội dung thông báo sẽ hiển thị ở đây...';
-    const currentTime = new Date().toLocaleString('vi-VN');
+    const previewTitle = formValues.title || intl.formatMessage({ id: 'pages.notification.preview.defaultTitle' });
+    const previewContent = formValues.content || intl.formatMessage({ id: 'pages.notification.preview.defaultContent' });
+    const currentTime = new Date().toLocaleString(intl.locale || 'en-US');
 
     return (
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
         <Typography.Title level={2} style={{ textAlign: 'center', marginBottom: '30px' }}>
-          Tạo thông báo
+          {intl.formatMessage({ id: 'pages.notification.createTitle' })}
         </Typography.Title>
 
         <Row gutter={24}>
           {/* Bên trái: Form nhập liệu */}
           <Col span={12}>
-            <Card title="Thông tin thông báo" bordered={false}>
+            <Card title={intl.formatMessage({ id: 'pages.notification.form.title' })} bordered={false}>
               <Form form={form} layout="vertical" onFinish={handleCreate}>
                 <Form.Item
                   name="title"
-                  label="Tiêu đề"
-                  rules={[{ required: true, message: 'Vui lòng nhập tiêu đề' }]}
+                  label={intl.formatMessage({ id: 'pages.notification.form.titleLabel' })}
+                  rules={[{ required: true, message: intl.formatMessage({ id: 'pages.notification.form.titleRequired' }) }]}
                 >
-                  <Input placeholder="Nhập tiêu đề thông báo" />
+                  <Input placeholder={intl.formatMessage({ id: 'pages.notification.form.titlePlaceholder' })} />
                 </Form.Item>
 
                 <Form.Item
                   name="content"
-                  label="Nội dung"
-                  rules={[{ required: true, message: 'Vui lòng nhập nội dung' }]}
+                  label={intl.formatMessage({ id: 'pages.notification.form.contentLabel' })}
+                  rules={[{ required: true, message: intl.formatMessage({ id: 'pages.notification.form.contentRequired' }) }]}
                 >
                   <Input.TextArea
                     rows={6}
-                    placeholder="Nhập nội dung thông báo"
+                    placeholder={intl.formatMessage({ id: 'pages.notification.form.contentPlaceholder' })}
                     showCount
                     maxLength={1000}
                   />
                 </Form.Item>
 
-                <Form.Item label="Chọn người nhận">
+                <Form.Item label={intl.formatMessage({ id: 'pages.notification.form.recipientLabel' })}>
                   <Select
                     value={recipientMode}
                     onChange={(value) => {
@@ -362,18 +364,18 @@ export default () => {
                       setSelectedApartment(undefined);
                       form.setFieldsValue({ userIds: [] });
                     }}
-                    options={recipientModes as any}
+                    options={recipientModeOptions as any}
                   />
                 </Form.Item>
 
                 {recipientMode === 'floor' && (
-                  <Form.Item label="Chọn tầng" required>
+                  <Form.Item label={intl.formatMessage({ id: 'pages.notification.form.chooseFloor' })} required>
                     <Select
-                      placeholder="Chọn tầng"
+                      placeholder={intl.formatMessage({ id: 'pages.notification.form.chooseFloor' })}
                       value={selectedFloor}
                       onChange={(value) => setSelectedFloor(value)}
                       options={availableFloors.map((floor) => ({
-                        label: `Tầng ${floor}`,
+                        label: `${intl.formatMessage({ id: 'pages.notification.form.floorLabel' }, { floor })}`,
                         value: floor,
                       }))}
                     />
@@ -381,9 +383,9 @@ export default () => {
                 )}
 
                 {recipientMode === 'apartment' && (
-                  <Form.Item label="Chọn căn hộ" required>
+                  <Form.Item label={intl.formatMessage({ id: 'pages.notification.form.chooseApartment' })} required>
                     <Select
-                      placeholder="Chọn căn hộ"
+                      placeholder={intl.formatMessage({ id: 'pages.notification.form.chooseApartment' })}
                       value={selectedApartment}
                       onChange={(value) => setSelectedApartment(value)}
                       options={apartments.map((apartment) => ({
@@ -397,20 +399,20 @@ export default () => {
                 {recipientMode === 'users' && (
                   <Form.Item
                     name="userIds"
-                    label="Chọn cư dân"
-                    rules={[{ required: true, message: 'Vui lòng chọn ít nhất một cư dân' }]}
+                    label={intl.formatMessage({ id: 'pages.notification.form.chooseResidents' })}
+                    rules={[{ required: true, message: intl.formatMessage({ id: 'pages.notification.form.chooseResidentsRequired' }) }]}
                   >
-                    <Select mode="multiple" placeholder="Chọn cư dân" options={residentOptions} />
+                    <Select mode="multiple" placeholder={intl.formatMessage({ id: 'pages.notification.form.chooseResidentsPlaceholder' })} options={residentOptions} />
                   </Form.Item>
                 )}
 
                 <Form.Item style={{ marginTop: '20px' }}>
                   <Space>
                     <Button type="primary" htmlType="submit" size="large">
-                      Gửi thông báo
+                      {intl.formatMessage({ id: 'pages.notification.form.sendButton' })}
                     </Button>
                     <Button onClick={() => form.resetFields()} size="large">
-                      Làm mới
+                      {intl.formatMessage({ id: 'pages.notification.form.resetButton' })}
                     </Button>
                   </Space>
                 </Form.Item>
@@ -420,7 +422,7 @@ export default () => {
 
           {/* Bên phải: Preview thông báo */}
           <Col span={12}>
-            <Card title="Xem trước thông báo" bordered={false}>
+            <Card title={intl.formatMessage({ id: 'pages.notification.preview.title' })} bordered={false}>
               <div style={{
                 border: '1px solid #d9d9d9',
                 borderRadius: '8px',
@@ -438,7 +440,7 @@ export default () => {
                 }}>
                   <BellOutlined style={{ fontSize: '24px', color: '#1890ff', marginRight: '12px' }} />
                   <Typography.Title level={4} style={{ margin: 0, color: '#1890ff' }}>
-                    Thông báo từ Ban Quản Lý
+                    {intl.formatMessage({ id: 'pages.notification.preview.header' })}
                   </Typography.Title>
                 </div>
 
@@ -461,15 +463,15 @@ export default () => {
                   border: '1px solid #bae7ff'
                 }}>
                   <Typography.Text strong style={{ color: '#0050b3' }}>
-                    📤 Người nhận:
+                    📤 {intl.formatMessage({ id: 'pages.notification.preview.recipientLabel' })}
                   </Typography.Text>
                   <Typography.Text style={{ marginLeft: '8px', color: '#0050b3' }}>
-                    {recipientMode === 'all' && 'Tất cả cư dân'}
-                    {recipientMode === 'floor' && selectedFloor && `Cư dân tầng ${selectedFloor}`}
+                    {recipientMode === 'all' && intl.formatMessage({ id: 'pages.notification.preview.recipientAll' })}
+                    {recipientMode === 'floor' && selectedFloor && intl.formatMessage({ id: 'pages.notification.preview.recipientFloor' }, { floor: selectedFloor })}
                     {recipientMode === 'apartment' && selectedApartment &&
-                      `Cư dân căn hộ ${apartments.find(a => a.id === selectedApartment)?.code || selectedApartment}`
+                      intl.formatMessage({ id: 'pages.notification.preview.recipientApartment' }, { apartment: apartments.find(a => a.id === selectedApartment)?.code || selectedApartment })
                     }
-                    {recipientMode === 'users' && `Đã chọn ${(form.getFieldValue('userIds') || []).length} cư dân`}
+                    {recipientMode === 'users' && intl.formatMessage({ id: 'pages.notification.preview.recipientSelectedCount' }, { count: (form.getFieldValue('userIds') || []).length })}
                   </Typography.Text>
                 </div>
 
@@ -487,16 +489,16 @@ export default () => {
               {/* Thông tin thống kê */}
               <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#f6ffed', borderRadius: '4px' }}>
                 <Typography.Text strong style={{ color: '#52c41a' }}>
-                  📊 Thống kê người nhận:
+                  📊 {intl.formatMessage({ id: 'pages.notification.preview.statsTitle' })}
                 </Typography.Text>
                 <div style={{ marginTop: '8px' }}>
                   <Typography.Text>
-                    • Số lượng người nhận: {getTargetUserIds().length} cư dân
+                    • {intl.formatMessage({ id: 'pages.notification.preview.recipientCount' }, { count: getTargetUserIds().length })}
                   </Typography.Text>
                 </div>
                 <div>
                   <Typography.Text>
-                    • Chế độ gửi: {recipientModes.find(mode => mode.value === recipientMode)?.label}
+                    • {intl.formatMessage({ id: 'pages.notification.preview.sendMode' }, { mode: recipientModeOptions.find(mode => mode.value === recipientMode)?.label })}
                   </Typography.Text>
                 </div>
               </div>
@@ -538,7 +540,7 @@ export default () => {
             onClick={handleMarkAllAsRead}
             disabled={unreadCount === 0}
           >
-            Đánh dấu tất cả đã đọc ({unreadCount})
+            {intl.formatMessage({ id: 'pages.notification.markAllRead' }, { count: unreadCount })}
           </Button>,
         ]}
         scroll={{ x: 800 }}
@@ -549,14 +551,14 @@ export default () => {
         title={
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <BellOutlined style={{ fontSize: '20px', color: '#1890ff', marginRight: '8px' }} />
-            Chi tiết thông báo
+            {intl.formatMessage({ id: 'pages.notification.detailModal.title' })}
           </div>
         }
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={[
           <Button key="close" onClick={() => setDetailModalVisible(false)}>
-            Đóng
+            {intl.formatMessage({ id: 'pages.notification.detailModal.close' })}
           </Button>
         ]}
         width={600}
@@ -580,7 +582,7 @@ export default () => {
             }}>
               <BellOutlined style={{ fontSize: '24px', color: '#1890ff', marginRight: '12px' }} />
               <Typography.Title level={4} style={{ margin: 0, color: '#1890ff' }}>
-                Thông báo từ Ban Quản Lý
+                {intl.formatMessage({ id: 'pages.notification.preview.header' })}
               </Typography.Title>
             </div>
 
@@ -603,7 +605,9 @@ export default () => {
               border: `1px solid ${selectedNotification.isRead ? '#b7eb8f' : '#ffd591'}`
             }}>
               <Typography.Text strong style={{ color: selectedNotification.isRead ? '#52c41a' : '#fa8c16' }}>
-                {selectedNotification.isRead ? '✅ Đã đọc' : '📧 Chưa đọc'}
+                {selectedNotification.isRead
+                  ? intl.formatMessage({ id: 'pages.notification.preview.statusRead' })
+                  : intl.formatMessage({ id: 'pages.notification.preview.statusUnread' })}
               </Typography.Text>
             </div>
 

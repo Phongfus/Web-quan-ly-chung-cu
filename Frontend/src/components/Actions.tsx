@@ -18,7 +18,7 @@ const Actions = () => {
         setMessageCount(msgRes.count);
 
         const notifRes = await getNotificationUnreadCount();
-        setNotificationCount(notifRes.unreadNotifications);
+        setNotificationCount(notifRes.count ?? 0);
       } catch (error) {
         console.error('Error fetching counts:', error);
       }

@@ -44,7 +44,7 @@ export default () => {
         setApartments(data);
       }
     } catch (error) {
-      message.error('Không thể tải danh sách căn hộ');
+      message.error(intl.formatMessage({ id: 'pages.complaint.loadApartmentsError' }));
     }
   };
 
@@ -66,9 +66,9 @@ export default () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "Chờ xử lý";
+        return intl.formatMessage({ id: 'pages.complaint.status.pending' });
       case "RESOLVED":
-        return "Đã giải quyết";
+        return intl.formatMessage({ id: 'pages.complaint.status.resolved' });
       default:
         return status;
     }
@@ -87,53 +87,53 @@ export default () => {
 
     try {
       await updateComplaint(record.id, { status: nextStatus });
-      message.success('Cập nhật trạng thái thành công');
+      message.success(intl.formatMessage({ id: 'pages.complaint.messages.updateStatusSuccess' }));
       actionRef.current?.reload();
     } catch (error) {
-      message.error('Cập nhật trạng thái thất bại');
+      message.error(intl.formatMessage({ id: 'pages.complaint.messages.updateStatusError' }));
     }
   };
 
   const columns: ProColumns<ComplaintItem>[] = [
     {
-      title: 'STT',
+      title: intl.formatMessage({ id: 'pages.complaint.table.index' }),
       dataIndex: 'index',
       valueType: 'index',
       width: 60,
       search: false,
     },
     {
-      title: 'ID',
+      title: intl.formatMessage({ id: 'pages.complaint.table.id' }),
       dataIndex: 'id',
       width: 80,
       search: false,
     },
     {
-      title: 'Tiêu đề',
+      title: intl.formatMessage({ id: 'pages.complaint.table.title' }),
       dataIndex: 'title',
       width: 200,
     },
     {
-      title: 'Nội dung',
+      title: intl.formatMessage({ id: 'pages.complaint.table.content' }),
       dataIndex: 'content',
       width: 300,
       search: false,
       ellipsis: true,
     },
     {
-      title: 'Người khiếu nại',
+      title: intl.formatMessage({ id: 'pages.complaint.table.complainant' }),
       dataIndex: ['user', 'fullName'],
       width: 150,
       search: false,
     },
     {
-      title: 'Căn hộ',
+      title: intl.formatMessage({ id: 'pages.complaint.table.apartment' }),
       dataIndex: ['apartment', 'code'],
       width: 100,
       search: false,
     },
     {
-      title: 'Trạng thái',
+      title: intl.formatMessage({ id: 'pages.complaint.table.status' }),
       dataIndex: 'status',
       width: 120,
       render: (_, record) => (
@@ -147,7 +147,7 @@ export default () => {
       ),
     },
     {
-      title: 'Ngày tạo',
+      title: intl.formatMessage({ id: 'pages.complaint.table.createdAt' }),
       dataIndex: 'createdAt',
       valueType: 'dateTime',
       width: 150,
@@ -393,13 +393,13 @@ export default () => {
             type="default"
             onClick={() => setFilterDrawerOpen(true)}
           >
-            Lọc nâng cao
+            {intl.formatMessage({ id: 'pages.complaint.filterAdvanced' })}
           </Button>,
           <Button
             key="clearFilters"
             onClick={handleClearFilters}
           >
-            Xóa bộ lọc
+            {intl.formatMessage({ id: 'pages.complaint.clearFilters' })}
           </Button>,
           <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             {intl.formatMessage({ id: 'pages.complaint.addNew' })}
@@ -423,7 +423,7 @@ export default () => {
         onApply={handleFilterSubmit}
         onClear={handleClearFilters}
         fields={filterFields}
-        quickSearchPlaceholder="Tìm kiếm ID, tiêu đề, nội dung..."
+        quickSearchPlaceholder={intl.formatMessage({ id: 'pages.complaint.quickSearchPlaceholder' })}
         initialQuickSearch={quickSearch}
         initialFilters={filterRows}
       />
@@ -441,30 +441,30 @@ export default () => {
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="title"
-            label="Tiêu đề"
-            rules={[{ required: true, message: 'Vui lòng nhập tiêu đề' }]}
+            label={intl.formatMessage({ id: 'pages.complaint.form.titleLabel' })}
+            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.complaint.form.titleRequired' }) }]}
           >
-            <Input placeholder="Nhập tiêu đề khiếu nại" />
+            <Input placeholder={intl.formatMessage({ id: 'pages.complaint.form.titlePlaceholder' })} />
           </Form.Item>
           <Form.Item
             name="content"
-            label="Nội dung"
-            rules={[{ required: true, message: 'Vui lòng nhập nội dung' }]}
+            label={intl.formatMessage({ id: 'pages.complaint.form.contentLabel' })}
+            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.complaint.form.contentRequired' }) }]}
           >
             <TextArea
-              placeholder="Nhập nội dung khiếu nại"
+              placeholder={intl.formatMessage({ id: 'pages.complaint.form.contentPlaceholder' })}
               rows={4}
             />
           </Form.Item>
           {!isResident && (
             <Form.Item
               name="apartmentId"
-              label="Căn hộ"
-              rules={[{ required: true, message: 'Vui lòng chọn căn hộ' }]}
+              label={intl.formatMessage({ id: 'pages.complaint.form.apartmentLabel' })}
+              rules={[{ required: true, message: intl.formatMessage({ id: 'pages.complaint.form.apartmentRequired' }) }]}
             >
               <Select
                 showSearch
-                placeholder="Chọn căn hộ"
+                placeholder={intl.formatMessage({ id: 'pages.complaint.form.apartmentPlaceholder' })}
                 optionFilterProp="label"
                 filterOption={(input, option) =>
                   option?.label
@@ -486,11 +486,11 @@ export default () => {
           {editingRecord && (
             <Form.Item
               name="status"
-              label="Trạng thái"
+              label={intl.formatMessage({ id: 'pages.complaint.form.statusLabel' })}
             >
-              <Select placeholder="Chọn trạng thái">
-                <Option value="PENDING">Chờ xử lý</Option>
-                <Option value="RESOLVED">Đã giải quyết</Option>
+              <Select placeholder={intl.formatMessage({ id: 'pages.complaint.form.chooseStatusPlaceholder' })}>
+                <Option value="PENDING">{intl.formatMessage({ id: 'pages.complaint.status.pending' })}</Option>
+                <Option value="RESOLVED">{intl.formatMessage({ id: 'pages.complaint.status.resolved' })}</Option>
               </Select>
             </Form.Item>
           )}
