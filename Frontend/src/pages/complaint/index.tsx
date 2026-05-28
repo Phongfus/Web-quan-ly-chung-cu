@@ -9,6 +9,7 @@ import AdvancedFilterDrawer, {
 } from '@/components/AdvancedFilterDrawer';
 import { getComplaints, createComplaint, updateComplaint, deleteComplaint, ComplaintItem } from '@/services/complaint';
 import { getApartments, ApartmentItem } from '@/services/apartment';
+import { getCurrentResident, ResidentItem } from '@/services/resident';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -18,11 +19,14 @@ export default () => {
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const isResident = currentUser?.role === 'RESIDENT';
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const complaintStatusSequence = ['PENDING', 'RESOLVED'] as const;
   const actionRef = useRef<ActionType | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ComplaintItem | null>(null);
   const [form] = Form.useForm();
   const [apartments, setApartments] = useState<ApartmentItem[]>([]);
+  const [currentResident, setCurrentResident] = useState<ResidentItem | null>(null);
   const [allData, setAllData] = useState<ComplaintItem[]>([]);
   const [quickSearch, setQuickSearch] = useState<string>('');
   const [filterRows, setFilterRows] = useState<FilterRowItem[]>([]);
@@ -30,8 +34,15 @@ export default () => {
 
   const loadApartments = async () => {
     try {
-      const data = await getApartments();
-      setApartments(data);
+      if (isResident) {
+        const residentData = await getCurrentResident();
+        setCurrentResident(residentData);
+        setApartments([residentData.apartment]);
+        form.setFieldsValue({ apartmentId: residentData.apartmentId });
+      } else {
+        const data = await getApartments();
+        setApartments(data);
+      }
     } catch (error) {
       message.error('Không thể tải danh sách căn hộ');
     }
@@ -39,7 +50,7 @@ export default () => {
 
   useEffect(() => {
     loadApartments();
-  }, []);
+  }, [isResident]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -60,6 +71,26 @@ export default () => {
         return "Đã giải quyết";
       default:
         return status;
+    }
+  };
+
+  const getNextComplaintStatus = (status: ComplaintItem['status']) => {
+    const index = complaintStatusSequence.indexOf(status);
+    if (index === -1) return status;
+    return complaintStatusSequence[(index + 1) % complaintStatusSequence.length];
+  };
+
+  const handleStatusClick = async (record: ComplaintItem) => {
+    if (!isAdmin) return;
+    const nextStatus = getNextComplaintStatus(record.status);
+    if (nextStatus === record.status) return;
+
+    try {
+      await updateComplaint(record.id, { status: nextStatus });
+      message.success('Cập nhật trạng thái thành công');
+      actionRef.current?.reload();
+    } catch (error) {
+      message.error('Cập nhật trạng thái thất bại');
     }
   };
 
@@ -106,7 +137,11 @@ export default () => {
       dataIndex: 'status',
       width: 120,
       render: (_, record) => (
-        <Tag color={getStatusColor(record.status)}>
+        <Tag
+          color={getStatusColor(record.status)}
+          style={{ cursor: isAdmin ? 'pointer' : 'default' }}
+          onClick={() => isAdmin && handleStatusClick(record)}
+        >
           {getStatusText(record.status)}
         </Tag>
       ),
@@ -148,9 +183,26 @@ export default () => {
         ]),
   ];
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     setEditingRecord(null);
     form.resetFields();
+
+    if (isResident) {
+      if (!currentResident) {
+        try {
+          const residentData = await getCurrentResident();
+          setCurrentResident(residentData);
+          setApartments([residentData.apartment]);
+          form.setFieldsValue({ apartmentId: residentData.apartmentId });
+        } catch (error) {
+          message.error('Không thể tải thông tin cư dân');
+          return;
+        }
+      } else {
+        form.setFieldsValue({ apartmentId: currentResident.apartmentId });
+      }
+    }
+
     setIsModalOpen(true);
   };
 
@@ -404,26 +456,33 @@ export default () => {
               rows={4}
             />
           </Form.Item>
-          <Form.Item
-            name="apartmentId"
-            label="Căn hộ"
-            rules={[{ required: true, message: 'Vui lòng chọn căn hộ' }]}
-          >
-            <Select
-              showSearch
-              placeholder="Chọn căn hộ"
-              optionFilterProp="label"
-              filterOption={(input, option) =>
-                option?.label
-                  ? option.label.toString().toLowerCase().includes(input.toLowerCase())
-                  : false
-              }
-              options={apartments.map((item) => ({
-                label: item.code,
-                value: item.id,
-              }))}
-            />
-          </Form.Item>
+          {!isResident && (
+            <Form.Item
+              name="apartmentId"
+              label="Căn hộ"
+              rules={[{ required: true, message: 'Vui lòng chọn căn hộ' }]}
+            >
+              <Select
+                showSearch
+                placeholder="Chọn căn hộ"
+                optionFilterProp="label"
+                filterOption={(input, option) =>
+                  option?.label
+                    ? option.label.toString().toLowerCase().includes(input.toLowerCase())
+                    : false
+                }
+                options={apartments.map((item) => ({
+                  label: item.code,
+                  value: item.id,
+                }))}
+              />
+            </Form.Item>
+          )}
+          {isResident && currentResident && (
+            <Form.Item name="apartmentId" hidden>
+              <Input type="hidden" />
+            </Form.Item>
+          )}
           {editingRecord && (
             <Form.Item
               name="status"

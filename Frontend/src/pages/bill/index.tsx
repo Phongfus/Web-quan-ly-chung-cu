@@ -423,6 +423,7 @@ export default () => {
     setEditingRecord(record);
     form.setFieldsValue({
       ...record,
+      monthYear: record.year && record.month ? dayjs(`${record.year}-${String(record.month).padStart(2, '0')}-01`) : null,
       dueDate: record.dueDate ? dayjs(record.dueDate) : null,
       status: record.status,
     });
@@ -458,11 +459,16 @@ export default () => {
   // Hàm submit form thêm/sửa hóa đơn
   const handleSubmit = async (values: any) => {
     try {
+      const monthYear = values.monthYear;
       const data = {
         ...values,
+        month: monthYear ? monthYear.month() + 1 : values.month,
+        year: monthYear ? monthYear.year() : values.year,
         amount: values.amount ?? 0,
         dueDate: values.dueDate?.format('YYYY-MM-DD'),
       };
+      delete data.monthYear;
+
       if (editingRecord) {
         await updateBill(editingRecord.id, data);
         message.success(intl.formatMessage({ id: 'pages.bill.updateSuccess' }));
@@ -894,21 +900,18 @@ export default () => {
               }))}
             />
           </Form.Item>
-          {/* Nhập tháng */}
+          {/* Chọn tháng/năm */}
           <Form.Item
-            name="month"
-            label={intl.formatMessage({ id: 'pages.bill.month' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.bill.monthRequired' }) }]}
+            name="monthYear"
+            label={intl.formatMessage({ id: 'pages.bill.monthYear' })}
+            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.bill.monthYearRequired' }) }]}
           >
-            <InputNumber min={1} max={12} style={{ width: '100%' }} placeholder={intl.formatMessage({ id: 'pages.bill.monthPlaceholder' })} />
-          </Form.Item>
-          {/* Nhập năm */}
-          <Form.Item
-            name="year"
-            label={intl.formatMessage({ id: 'pages.bill.year' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.bill.yearRequired' }) }]}
-          >
-            <InputNumber min={2000} max={2100} style={{ width: '100%' }} placeholder={intl.formatMessage({ id: 'pages.bill.yearPlaceholder' })} />
+            <DatePicker
+              picker="month"
+              style={{ width: '100%' }}
+              placeholder={intl.formatMessage({ id: 'pages.bill.monthYearPlaceholder' })}
+              format="MM/YYYY"
+            />
           </Form.Item>
           {/* Nhập tiền điện */}
           <Form.Item

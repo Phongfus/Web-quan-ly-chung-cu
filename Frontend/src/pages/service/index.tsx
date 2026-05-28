@@ -7,6 +7,7 @@ import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
 } from '@/components/AdvancedFilterDrawer';
+import SortIcon, { SortDirection } from '@/components/SortIcon';
 import { getServices, createService, updateService, deleteService, ServiceItem } from '@/services/service';
 import { getApartments, ApartmentItem } from '@/services/apartment';
 import { getCurrentResident, ResidentItem } from '@/services/resident';
@@ -32,6 +33,8 @@ export default () => {
   const [quickSearch, setQuickSearch] = useState<string>('');
   const [filterRows, setFilterRows] = useState<FilterRowItem[]>([]);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [createdAtSort, setCreatedAtSort] = useState<SortDirection>(null);
+  const [statusSort, setStatusSort] = useState<SortDirection>(null);
 
   const loadApartments = async () => {
     try {
@@ -155,9 +158,21 @@ export default () => {
       ellipsis: true,
     },
     {
-      title: intl.formatMessage({ id: 'pages.service.status' }),
+      title: (
+        <Space>
+          {intl.formatMessage({ id: 'pages.service.status' })}
+          <SortIcon
+            sortDirection={statusSort}
+            onSort={(direction) => {
+              setStatusSort(direction);
+              setCreatedAtSort(null);
+              actionRef.current?.reload();
+            }}
+          />
+        </Space>
+      ),
       dataIndex: 'status',
-      width: 90,
+      width: 110,
       valueEnum: {
         PENDING: { text: intl.formatMessage({ id: 'pages.service.status.pending' }) },
         PROCESSING: { text: intl.formatMessage({ id: 'pages.service.status.processing' }) },
@@ -177,7 +192,19 @@ export default () => {
       },
     },
     {
-      title: intl.formatMessage({ id: 'pages.service.createdAt' }),
+      title: (
+        <Space>
+          {intl.formatMessage({ id: 'pages.service.createdAt' })}
+          <SortIcon
+            sortDirection={createdAtSort}
+            onSort={(direction) => {
+              setCreatedAtSort(direction);
+              setStatusSort(null);
+              actionRef.current?.reload();
+            }}
+          />
+        </Space>
+      ),
       dataIndex: 'createdAt',
       valueType: 'dateTime',
       width: 160,
@@ -386,8 +413,26 @@ export default () => {
       );
     }
 
-    // Sắp xếp theo ID tăng dần
-    filtered.sort((a, b) => a.id.localeCompare(b.id));
+    if (createdAtSort) {
+      filtered = filtered.sort((a, b) => {
+        const aTime = new Date(a.createdAt).getTime();
+        const bTime = new Date(b.createdAt).getTime();
+        return createdAtSort === 'asc' ? aTime - bTime : bTime - aTime;
+      });
+    } else if (statusSort) {
+      const statusOrder: Record<string, number> = {
+        PENDING: 1,
+        PROCESSING: 2,
+        DONE: 3,
+      };
+      filtered = filtered.sort((a, b) => {
+        const aOrder = statusOrder[a.status] ?? 0;
+        const bOrder = statusOrder[b.status] ?? 0;
+        return statusSort === 'asc' ? aOrder - bOrder : bOrder - aOrder;
+      });
+    } else {
+      filtered.sort((a, b) => a.id.localeCompare(b.id));
+    }
 
     return filtered;
   };
