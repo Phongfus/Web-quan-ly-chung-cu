@@ -698,7 +698,7 @@ export default () => {
             {intl.formatMessage({ id: 'components.advancedFilter.open' })}
           </Button>,
           // Nút xóa bộ lọc
-          <Button key="clearFilters" onClick={handleClearFilters}>
+          <Button key="clearFilters" type="default" style={{ color: '#fa8c16', borderColor: '#fa8c16' }} onClick={handleClearFilters}>
             {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
           </Button>,
           // Nút xuất Excel

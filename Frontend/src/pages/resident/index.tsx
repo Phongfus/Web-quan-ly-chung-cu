@@ -345,6 +345,8 @@ export default () => {
           </Button>,
           <Button
             key="clearFilters"
+            type="default"
+            style={{ color: '#fa8c16', borderColor: '#fa8c16' }}
             onClick={handleClearFilters}
           >
             {intl.formatMessage({ id: 'components.advancedFilter.clear' }) || 'Xóa bộ lọc'}

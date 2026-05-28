@@ -371,7 +371,7 @@ export default () => {
             <Button key="filter" type="default" onClick={() => setFilterDrawerOpen(true)}>
               {intl.formatMessage({ id: 'components.advancedFilter.open' })}
             </Button>,
-            <Button key="clearFilters" onClick={handleClearFilters}>
+            <Button key="clearFilters" type="default" style={{ color: '#fa8c16', borderColor: '#fa8c16' }} onClick={handleClearFilters}>
               {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
             </Button>,
           ];

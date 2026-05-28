@@ -264,7 +264,7 @@ export default function AdvancedFilterDrawer({
         </Button>
 
         <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Button onClick={handleClear}>{clearFiltersLabel}</Button>
+          <Button type="default" style={{ color: '#fa8c16', borderColor: '#fa8c16' }} onClick={handleClear}>{clearFiltersLabel}</Button>
           <Button type="primary" onClick={handleApply}>{applyLabel}</Button>
         </Space>
       </Space>
