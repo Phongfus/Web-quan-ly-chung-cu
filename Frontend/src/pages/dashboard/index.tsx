@@ -22,7 +22,7 @@ import {
 } from '@ant-design/icons';
 import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
-import { useIntl, useModel } from '@umijs/max';
+import { useModel } from '@umijs/max';
 import { getDashboard } from '@/services/dashboard';
 
 
@@ -57,7 +57,7 @@ type DashboardData = {
 };
 
 const Dashboard = () => {
-  const intl = useIntl();
+  
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const isResident = currentUser?.role === 'RESIDENT';
@@ -90,11 +90,11 @@ const Dashboard = () => {
   const activityList = () => {
     if (!data) return [];
 
-    const paidBillsLabel = intl.formatMessage({ id: 'pages.dashboard.activity.paidBills' });
-    const unpaidBillsLabel = intl.formatMessage({ id: 'pages.dashboard.activity.unpaidBills' });
-    const upcomingOverdueLabel = intl.formatMessage({ id: 'pages.dashboard.activity.upcomingOverdueBills' });
-    const overdueLabel = intl.formatMessage({ id: 'pages.dashboard.activity.overdueBills' });
-    const maintenanceLabel = intl.formatMessage({ id: 'pages.dashboard.activity.maintenanceRequests' });
+    const paidBillsLabel = 'Hóa đơn đã thanh toán';
+    const unpaidBillsLabel = 'Hóa đơn chưa thanh toán';
+    const upcomingOverdueLabel = 'Hóa đơn sắp quá hạn';
+    const overdueLabel = 'Hóa đơn quá hạn';
+    const maintenanceLabel = 'Yêu cầu sửa chữa';
 
     return [
       `${paidBillsLabel}: ${getActivityValue('paidBills')}`,
@@ -106,11 +106,11 @@ const Dashboard = () => {
   };
 
   const renderActivityItem = (item: string, index: number) => {
-    const paidBillsLabel = intl.formatMessage({ id: 'pages.dashboard.activity.paidBills' });
-    const unpaidBillsLabel = intl.formatMessage({ id: 'pages.dashboard.activity.unpaidBills' });
-    const upcomingOverdueLabel = intl.formatMessage({ id: 'pages.dashboard.activity.upcomingOverdueBills' });
-    const overdueLabel = intl.formatMessage({ id: 'pages.dashboard.activity.overdueBills' });
-    const maintenanceLabel = intl.formatMessage({ id: 'pages.dashboard.activity.maintenanceRequests' });
+    const paidBillsLabel = 'Hóa đơn đã thanh toán';
+    const unpaidBillsLabel = 'Hóa đơn chưa thanh toán';
+    const upcomingOverdueLabel = 'Hóa đơn sắp quá hạn';
+    const overdueLabel = 'Hóa đơn quá hạn';
+    const maintenanceLabel = 'Yêu cầu sửa chữa';
 
     let icon = <CheckCircleOutlined />;
     let color = '#1890ff';
@@ -211,7 +211,7 @@ const Dashboard = () => {
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <div style={{ marginBottom: 16 }}>
-            <h3 style={{ marginBottom: 8 }}>{intl.formatMessage({ id: 'pages.dashboard.statisticsByYear' })}</h3>
+            <h3 style={{ marginBottom: 8 }}>{'Thống kê theo năm'}</h3>
             <DatePicker
               picker="year"
               value={year}
@@ -226,7 +226,7 @@ const Dashboard = () => {
         <Col span={4}>
           <Card key={String(data?.totalApartment)} loading={loading} style={{ borderLeft: '4px solid #1890ff' }}>
             <Statistic
-              title={isResident ? intl.formatMessage({ id: 'pages.dashboard.myApartmentCode' }) : intl.formatMessage({ id: 'pages.dashboard.totalApartments' })}
+              title={isResident ? 'Mã căn hộ' : 'Tổng căn hộ'}
               value={isResident ? String(data?.totalApartment ?? 'N/A') : (data?.totalApartment || 0)}
               valueRender={() => <span>{isResident ? String(data?.totalApartment ?? 'N/A') : (data?.totalApartment || 0)}</span>}
               prefix={<HomeOutlined style={{ color: '#1890ff' }} />}
@@ -237,7 +237,7 @@ const Dashboard = () => {
         <Col span={5}>
           <Card loading={loading} style={{ borderLeft: '4px solid #52c41a' }}>
             <Statistic
-              title={isResident ? intl.formatMessage({ id: 'pages.dashboard.paidInvoices' }) : intl.formatMessage({ id: 'pages.dashboard.totalResidents' })}
+              title={isResident ? 'Hóa đơn đã thanh toán' : 'Tổng cư dân'}
               value={isResident ? data?.paidInvoiceTotal ?? 0 : data?.totalResident || 0}
               suffix={isResident ? 'đ' : undefined}
               prefix={isResident ? <DollarOutlined style={{ color: '#52c41a' }} /> : <TeamOutlined style={{ color: '#52c41a' }} />}
@@ -248,7 +248,7 @@ const Dashboard = () => {
         <Col span={5}>
           <Card loading={loading} style={{ borderLeft: '4px solid #ff7bd1' }}>
             <Statistic
-              title={isResident ? intl.formatMessage({ id: 'pages.dashboard.unpaidInvoices' }) : intl.formatMessage({ id: 'pages.dashboard.totalRevenue' })}
+              title={isResident ? 'Hóa đơn chưa thanh toán' : 'Doanh thu'}
               value={isResident ? data?.unpaidInvoiceTotal ?? 0 : data?.revenue || 0}
               suffix='đ'
               prefix={isResident ? <ExclamationCircleOutlined style={{ color: '#ff7bd1' }} /> : <DollarOutlined style={{ color: '#ff7bd1' }} />}
@@ -259,7 +259,7 @@ const Dashboard = () => {
         <Col span={5}>
           <Card loading={loading} style={{ borderLeft: '4px solid #fa7b7d' }}>
             <Statistic
-              title={isResident ? intl.formatMessage({ id: 'pages.dashboard.upcomingOverdue' }) : intl.formatMessage({ id: 'pages.dashboard.maintenanceRequests' })}
+              title={isResident ? 'Sắp quá hạn' : 'Yêu cầu sửa chữa'}
               value={isResident ? data?.upcomingOverdueTotal ?? 0 : data?.maintenance || 0}
               suffix={isResident ? 'đ' : undefined}
               prefix={isResident ? <ClockCircleOutlined style={{ color: '#fa7b7d' }} /> : <ToolOutlined style={{ color: '#fa7b7d' }} />}
@@ -270,7 +270,7 @@ const Dashboard = () => {
         <Col span={5}>
           <Card loading={loading} style={{ borderLeft: '4px solid #fc0000' }}>
             <Statistic
-              title={isResident ? intl.formatMessage({ id: 'pages.dashboard.overdue' }) : intl.formatMessage({ id: 'pages.dashboard.complaintsPending' })}
+              title={isResident ? 'Quá hạn' : 'Khiếu nại chờ xử lý'}
               value={isResident ? data?.overdueTotal ?? 0 : data?.complaintPending || 0}
               suffix={isResident ? 'đ' : undefined}
               prefix={isResident ? <CloseCircleOutlined style={{ color: '#fc0000' }} /> : <ExclamationCircleOutlined style={{ color: '#fc0000' }} />}
@@ -281,14 +281,14 @@ const Dashboard = () => {
         {/* Khu vực biểu đồ và Hoạt động */}
         <Col span={16}>
           <Card
-            title={intl.formatMessage({ id: isResident ? 'pages.dashboard.costChart' : 'pages.dashboard.revenueChart' })}
+            title={isResident ? 'Biểu đồ chi phí' : 'Biểu đồ doanh thu'}
             loading={loading}
             extra={
               <Segmented
                 options={[
-                  { label: intl.formatMessage({ id: 'pages.dashboard.chart.column' }), value: 'column' },
-                  { label: intl.formatMessage({ id: 'pages.dashboard.chart.line' }), value: 'line' },
-                  { label: intl.formatMessage({ id: 'pages.dashboard.chart.pie' }), value: 'pie' },
+                  { label: 'Cột', value: 'column' },
+                  { label: 'Đường', value: 'line' },
+                  { label: 'Tròn', value: 'pie' },
                 ]}
                 value={chartType}
                 onChange={(val) => setChartType(val as any)}
@@ -300,11 +300,11 @@ const Dashboard = () => {
         </Col>
 
         <Col span={8}>
-          <Card title={intl.formatMessage({ id: 'pages.dashboard.activities' })} loading={loading}>
+          <Card title={'Hoạt động'} loading={loading}>
             <List
               dataSource={activityList()}
               renderItem={renderActivityItem}
-              locale={{ emptyText: intl.formatMessage({ id: 'pages.dashboard.noActivities' }) }}
+              locale={{ emptyText: 'Không có hoạt động mới' }}
             />
           </Card>
         </Col>

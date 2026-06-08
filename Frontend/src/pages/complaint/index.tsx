@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Modal, Form, Input, message, Select } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useIntl, useModel } from '@umijs/max';
+import { useModel } from '@umijs/max';
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
@@ -15,7 +15,6 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 export default () => {
-  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const isResident = currentUser?.role === 'RESIDENT';
@@ -37,14 +36,20 @@ export default () => {
       if (isResident) {
         const residentData = await getCurrentResident();
         setCurrentResident(residentData);
-        setApartments([residentData.apartment]);
+        setApartments([
+          {
+            ...residentData.apartment,
+            createdAt: new Date().toISOString(),
+            status: residentData.apartment.status as ApartmentItem['status'],
+          },
+        ]);
         form.setFieldsValue({ apartmentId: residentData.apartmentId });
       } else {
         const data = await getApartments();
         setApartments(data);
       }
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.complaint.loadApartmentsError' }));
+      message.error('Không thể tải danh sách căn hộ');
     }
   };
 
@@ -66,9 +71,9 @@ export default () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case "PENDING":
-        return intl.formatMessage({ id: 'pages.complaint.status.pending' });
+        return 'Chờ xử lý';
       case "RESOLVED":
-        return intl.formatMessage({ id: 'pages.complaint.status.resolved' });
+        return 'Đã giải quyết';
       default:
         return status;
     }
@@ -87,53 +92,53 @@ export default () => {
 
     try {
       await updateComplaint(record.id, { status: nextStatus });
-      message.success(intl.formatMessage({ id: 'pages.complaint.messages.updateStatusSuccess' }));
+      message.success('Cập nhật trạng thái thành công');
       actionRef.current?.reload();
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.complaint.messages.updateStatusError' }));
+      message.error('Cập nhật trạng thái thất bại');
     }
   };
 
   const columns: ProColumns<ComplaintItem>[] = [
     {
-      title: intl.formatMessage({ id: 'pages.complaint.table.index' }),
+      title: 'STT',
       dataIndex: 'index',
       valueType: 'index',
       width: 60,
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.complaint.table.id' }),
+      title: 'ID',
       dataIndex: 'id',
       width: 80,
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.complaint.table.title' }),
+      title: 'Tiêu đề',
       dataIndex: 'title',
       width: 200,
     },
     {
-      title: intl.formatMessage({ id: 'pages.complaint.table.content' }),
+      title: 'Nội dung',
       dataIndex: 'content',
       width: 300,
       search: false,
       ellipsis: true,
     },
     {
-      title: intl.formatMessage({ id: 'pages.complaint.table.complainant' }),
+      title: 'Người khiếu nại',
       dataIndex: ['user', 'fullName'],
       width: 150,
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.complaint.table.apartment' }),
+      title: 'Căn hộ',
       dataIndex: ['apartment', 'code'],
       width: 100,
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.complaint.table.status' }),
+      title: 'Trạng thái',
       dataIndex: 'status',
       width: 120,
       render: (_, record) => (
@@ -147,7 +152,7 @@ export default () => {
       ),
     },
     {
-      title: intl.formatMessage({ id: 'pages.complaint.table.createdAt' }),
+      title: 'Ngày tạo',
       dataIndex: 'createdAt',
       valueType: 'dateTime',
       width: 150,
@@ -167,7 +172,7 @@ export default () => {
                 icon={<EditOutlined />}
                 onClick={() => handleEdit(record)}
               >
-                {intl.formatMessage({ id: 'pages.complaint.edit' })}
+                {'Sửa'}
               </Button>,
               <Button
                 key="delete"
@@ -176,7 +181,7 @@ export default () => {
                 icon={<DeleteOutlined />}
                 onClick={() => handleDelete(record.id)}
               >
-                {intl.formatMessage({ id: 'pages.complaint.delete' })}
+                {'Xóa'}
               </Button>,
             ],
           },
@@ -192,7 +197,13 @@ export default () => {
         try {
           const residentData = await getCurrentResident();
           setCurrentResident(residentData);
-          setApartments([residentData.apartment]);
+          setApartments([
+            {
+              ...residentData.apartment,
+              createdAt: new Date().toISOString(),
+              status: residentData.apartment.status as ApartmentItem['status'],
+            },
+          ]);
           form.setFieldsValue({ apartmentId: residentData.apartmentId });
         } catch (error) {
           message.error('Không thể tải thông tin cư dân');
@@ -219,15 +230,15 @@ export default () => {
 
   const handleDelete = async (id: string) => {
     Modal.confirm({
-      title: intl.formatMessage({ id: 'pages.complaint.deleteConfirm' }),
-      content: intl.formatMessage({ id: 'pages.complaint.deleteContent' }),
+      title: 'Xác nhận xóa',
+      content: 'Bạn có chắc muốn xóa khiếu nại này?',
       onOk: async () => {
         try {
           await deleteComplaint(id);
-          message.success(intl.formatMessage({ id: 'pages.complaint.deleteSuccess' }));
+          message.success('Đã xóa thành công');
           actionRef.current?.reload();
         } catch (error) {
-          message.error(intl.formatMessage({ id: 'pages.complaint.deleteError' }));
+          message.error('Xóa thất bại');
         }
       },
     });
@@ -237,16 +248,16 @@ export default () => {
     try {
       if (editingRecord) {
         await updateComplaint(editingRecord.id, values);
-        message.success(intl.formatMessage({ id: 'pages.complaint.updateSuccess' }));
+        message.success('Cập nhật thành công');
       } else {
         await createComplaint(values);
-        message.success(intl.formatMessage({ id: 'pages.complaint.createSuccess' }));
+        message.success('Tạo khiếu nại thành công');
       }
       setIsModalOpen(false);
       actionRef.current?.reload();
     } catch (error: any) {
       console.error('Submit error:', error);
-      const errorMsg = error?.response?.data?.message || error?.message || intl.formatMessage({ id: 'pages.complaint.actionError' });
+      const errorMsg = error?.response?.data?.message || error?.message || 'Có lỗi xảy ra';
       message.error(errorMsg);
     }
   };
@@ -365,7 +376,7 @@ export default () => {
   return (
     <>
       <ProTable<ComplaintItem>
-        headerTitle={intl.formatMessage({ id: 'pages.complaint.title' })}
+        headerTitle={'Quản lý khiếu nại'}
         actionRef={actionRef}
         rowKey="id"
         search={false}
@@ -378,7 +389,7 @@ export default () => {
         toolBarRender={() => [
           <Input.Search
             key="quickSearch"
-            placeholder={intl.formatMessage({ id: 'pages.complaint.quickSearchPlaceholder' })}
+            placeholder={'Tìm kiếm ID, tiêu đề, nội dung...'}
             allowClear
             style={{ width: 320 }}
             value={quickSearch}
@@ -393,7 +404,7 @@ export default () => {
             type="default"
             onClick={() => setFilterDrawerOpen(true)}
           >
-            {intl.formatMessage({ id: 'pages.complaint.filterAdvanced' })}
+            {'Lọc nâng cao'}
           </Button>,
           <Button
             key="clearFilters"
@@ -401,10 +412,10 @@ export default () => {
             style={{ color: '#fa8c16', borderColor: '#fa8c16' }}
             onClick={handleClearFilters}
           >
-            {intl.formatMessage({ id: 'pages.complaint.clearFilters' })}
+            {'Xóa bộ lọc'}
           </Button>,
           <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            {intl.formatMessage({ id: 'pages.complaint.addNew' })}
+            {'Thêm khiếu nại'}
           </Button>,
         ]}
         request={async () => {
@@ -425,15 +436,13 @@ export default () => {
         onApply={handleFilterSubmit}
         onClear={handleClearFilters}
         fields={filterFields}
-        quickSearchPlaceholder={intl.formatMessage({ id: 'pages.complaint.quickSearchPlaceholder' })}
+        quickSearchPlaceholder={'Tìm kiếm ID, tiêu đề, nội dung...'}
         initialQuickSearch={quickSearch}
         initialFilters={filterRows}
       />
 
       <Modal
-        title={editingRecord
-          ? intl.formatMessage({ id: 'pages.complaint.editTitle' })
-          : intl.formatMessage({ id: 'pages.complaint.addTitle' })}
+        title={editingRecord ? 'Sửa khiếu nại' : 'Thêm khiếu nại'}
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
@@ -443,30 +452,30 @@ export default () => {
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="title"
-            label={intl.formatMessage({ id: 'pages.complaint.form.titleLabel' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.complaint.form.titleRequired' }) }]}
+            label={'Tiêu đề'}
+            rules={[{ required: true, message: 'Vui lòng nhập tiêu đề' }]}
           >
-            <Input placeholder={intl.formatMessage({ id: 'pages.complaint.form.titlePlaceholder' })} />
+            <Input placeholder={'Nhập tiêu đề khiếu nại'} />
           </Form.Item>
           <Form.Item
             name="content"
-            label={intl.formatMessage({ id: 'pages.complaint.form.contentLabel' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.complaint.form.contentRequired' }) }]}
+            label={'Nội dung'}
+            rules={[{ required: true, message: 'Vui lòng nhập nội dung' }]}
           >
             <TextArea
-              placeholder={intl.formatMessage({ id: 'pages.complaint.form.contentPlaceholder' })}
+              placeholder={'Nhập nội dung khiếu nại'}
               rows={4}
             />
           </Form.Item>
           {!isResident && (
             <Form.Item
               name="apartmentId"
-              label={intl.formatMessage({ id: 'pages.complaint.form.apartmentLabel' })}
-              rules={[{ required: true, message: intl.formatMessage({ id: 'pages.complaint.form.apartmentRequired' }) }]}
+              label={'Căn hộ'}
+              rules={[{ required: true, message: 'Vui lòng chọn căn hộ' }]}
             >
               <Select
                 showSearch
-                placeholder={intl.formatMessage({ id: 'pages.complaint.form.apartmentPlaceholder' })}
+                placeholder={'Chọn căn hộ'}
                 optionFilterProp="label"
                 filterOption={(input, option) =>
                   option?.label
@@ -488,11 +497,11 @@ export default () => {
           {editingRecord && (
             <Form.Item
               name="status"
-              label={intl.formatMessage({ id: 'pages.complaint.form.statusLabel' })}
+              label={'Trạng thái'}
             >
-              <Select placeholder={intl.formatMessage({ id: 'pages.complaint.form.chooseStatusPlaceholder' })}>
-                <Option value="PENDING">{intl.formatMessage({ id: 'pages.complaint.status.pending' })}</Option>
-                <Option value="RESOLVED">{intl.formatMessage({ id: 'pages.complaint.status.resolved' })}</Option>
+              <Select placeholder={'Chọn trạng thái'}>
+                <Option value="PENDING">{'Chờ xử lý'}</Option>
+                <Option value="RESOLVED">{'Đã giải quyết'}</Option>
               </Select>
             </Form.Item>
           )}

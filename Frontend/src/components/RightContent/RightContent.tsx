@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Space, Badge, Tooltip } from 'antd';
 import { MessageOutlined, BellOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
 import { useModel, history } from '@umijs/max';
-import { SelectLang } from '@umijs/max';
 import { AvatarDropdown, AvatarName } from './AvatarDropdown';
 import { getUnreadCount } from '@/services/notification';
 
@@ -38,8 +37,6 @@ const RightContent: React.FC = () => {
 
   return (
     <Space size="middle" style={{ alignItems: 'center' }}>
-      <SelectLang />
-
       <Tooltip title="Messenger">
         <Badge count={unreadCount} showZero size="small" overflowCount={99}>
           <MessageOutlined

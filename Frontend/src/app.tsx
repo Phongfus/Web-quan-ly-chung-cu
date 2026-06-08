@@ -1,5 +1,8 @@
+
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import { getIntl } from '@umijs/max';
+import type { ReactNode } from 'react';
+import { ConfigProvider } from 'antd';
+import viVN from 'antd/locale/vi_VN';
 import Actions from '@/components/Actions';
 import { initSocketClient, reconnectSocketWithToken } from '@/services/socket';
 
@@ -121,7 +124,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
 
   return {
     logo: '/logo.png',
-    title: getIntl().formatMessage({ id: 'app.title' }),
+    title: 'Hệ thống quản lý chung cư',
 
     layout: 'mix',
 
@@ -133,7 +136,10 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
     },
 
     footerRender: () => null,
-
   };
 
 };
+
+export function rootContainer(container: ReactNode) {
+  return <ConfigProvider locale={viVN}>{container}</ConfigProvider>;
+}

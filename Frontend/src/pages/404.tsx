@@ -1,4 +1,4 @@
-import { history, useIntl } from '@umijs/max';
+import { history } from '@umijs/max';
 import { Button, Card, Result } from 'antd';
 import React from 'react';
 
@@ -7,10 +7,10 @@ const NoFoundPage: React.FC = () => (
     <Result
       status="404"
       title="404"
-      subTitle={useIntl().formatMessage({ id: 'pages.404.subTitle' })}
+      subTitle="Trang bạn tìm không tồn tại hoặc đã bị xóa."
       extra={
         <Button type="primary" onClick={() => history.push('/')}>
-          {useIntl().formatMessage({ id: 'pages.404.buttonText' })}
+          {'Quay lại trang chủ'}
         </Button>
       }
     />

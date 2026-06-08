@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Modal, Form, Input, message, Switch, Select } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useIntl, useModel } from '@umijs/max';
+import { useModel } from '@umijs/max';
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
@@ -11,7 +11,7 @@ import { getResidents, createResident, updateResident, deleteResident, ResidentI
 import { getApartments, getAvailableApartments, ApartmentItem } from '@/services/apartment';
 
 export default () => {
-  const intl = useIntl();
+  
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const isResident = currentUser?.role === 'RESIDENT';
@@ -55,42 +55,40 @@ export default () => {
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.resident.fullName' }),
+      title: 'Họ tên',
       dataIndex: ['user', 'fullName'],
     },
     {
-      title: intl.formatMessage({ id: 'pages.resident.email' }),
+      title: 'Email',
       dataIndex: ['user', 'email'],
     },
     {
-      title: intl.formatMessage({ id: 'pages.resident.phone' }),
+      title: 'Số điện thoại',
       dataIndex: ['user', 'phone'],
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.resident.apartment' }),
+      title: 'Căn hộ',
       dataIndex: ['apartment', 'code'],
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.resident.identityCard' }),
+      title: 'CMND/CCCD',
       dataIndex: 'identityCard',
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.resident.status' }),
+      title: 'Trạng thái',
       dataIndex: ['user', 'isActive'],
       search: false,
       render: (_, record) => (
         <Tag color={record.user?.isActive ? 'green' : 'red'}>
-          {record.user?.isActive
-            ? intl.formatMessage({ id: 'pages.resident.active' })
-            : intl.formatMessage({ id: 'pages.resident.inactive' })}
+          {record.user?.isActive ? 'Hoạt động' : 'Không hoạt động'}
         </Tag>
       ),
     },
     {
-      title: intl.formatMessage({ id: 'pages.resident.createdAt' }),
+      title: 'Ngày tạo',
       dataIndex: 'createdAt',
       valueType: 'dateTime',
       search: false,
@@ -99,7 +97,7 @@ export default () => {
   ? []
   : [
       {
-        title: intl.formatMessage({ id: 'pages.resident.actions' }),
+        title: 'Thao tác',
         valueType: 'option' as const,
         width: 180,
         render: (_: unknown, record: ResidentItem) => [
@@ -109,7 +107,7 @@ export default () => {
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           >
-            {intl.formatMessage({ id: 'pages.resident.edit' })}
+            {'Sửa'}
           </Button>,
           <Button
             key="delete"
@@ -118,7 +116,7 @@ export default () => {
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
           >
-            {intl.formatMessage({ id: 'pages.resident.delete' })}
+            {'Xóa'}
           </Button>,
         ],
       },
@@ -149,15 +147,15 @@ export default () => {
 
   const handleDelete = async (id: string) => {
     Modal.confirm({
-      title: intl.formatMessage({ id: 'pages.resident.deleteConfirm' }),
-      content: intl.formatMessage({ id: 'pages.resident.deleteContent' }),
+      title: 'Xác nhận xóa?',
+      content: 'Bạn có chắc muốn xóa cư dân này?',
       onOk: async () => {
         try {
           await deleteResident(id);
-          message.success(intl.formatMessage({ id: 'pages.resident.deleteSuccess' }));
+          message.success('Đã xóa thành công');
           actionRef.current?.reload();
         } catch (error) {
-          message.error(intl.formatMessage({ id: 'pages.resident.deleteError' }));
+          message.error('Xóa thất bại');
         }
       },
     });
@@ -176,34 +174,34 @@ export default () => {
 
       if (editingRecord) {
         await updateResident(editingRecord.id, payload);
-        message.success(intl.formatMessage({ id: 'pages.resident.updateSuccess' }));
+        message.success('Cập nhật thành công');
       } else {
         await createResident(payload);
-        message.success(intl.formatMessage({ id: 'pages.resident.createSuccess' }));
+        message.success('Tạo mới thành công');
       }
       setIsModalOpen(false);
       actionRef.current?.reload();
     } catch (error: any) {
       console.error("Submit error:", error);
-      const errorMsg = error?.response?.data?.message || error?.message || intl.formatMessage({ id: 'pages.resident.actionError' });
+      const errorMsg = error?.response?.data?.message || error?.message || 'Thao tác thất bại';
       message.error(errorMsg);
     }
   };
 
   const filterFields: FilterFieldDefinition[] = [
     { key: 'id', label: 'ID', type: 'text' },
-    { key: 'fullName', label: intl.formatMessage({ id: 'pages.resident.fullName' }), type: 'text' },
-    { key: 'email', label: intl.formatMessage({ id: 'pages.resident.email' }), type: 'text' },
-    { key: 'phone', label: intl.formatMessage({ id: 'pages.resident.phone' }), type: 'text' },
-    { key: 'apartmentCode', label: intl.formatMessage({ id: 'pages.resident.apartment' }), type: 'text' },
-    { key: 'identityCard', label: intl.formatMessage({ id: 'pages.resident.identityCard' }), type: 'text' },
+    { key: 'fullName', label: 'Họ tên', type: 'text' },
+    { key: 'email', label: 'Email', type: 'text' },
+    { key: 'phone', label: 'Số điện thoại', type: 'text' },
+    { key: 'apartmentCode', label: 'Căn hộ', type: 'text' },
+    { key: 'identityCard', label: 'CMND/CCCD', type: 'text' },
     {
       key: 'isActive',
-      label: intl.formatMessage({ id: 'pages.resident.status' }),
+      label: 'Trạng thái',
       type: 'select',
       options: [
-        { label: intl.formatMessage({ id: 'pages.resident.active' }), value: 'true' },
-        { label: intl.formatMessage({ id: 'pages.resident.inactive' }), value: 'false' },
+        { label: 'Hoạt động', value: 'true' },
+        { label: 'Không hoạt động', value: 'false' },
       ],
     },
   ];
@@ -313,7 +311,7 @@ export default () => {
   return (
     <>
       <ProTable<ResidentItem>
-        headerTitle={intl.formatMessage({ id: 'pages.resident.title' })}
+        headerTitle={'Quản lý cư dân'}
         actionRef={actionRef}
         rowKey="id"
         search={false}
@@ -326,7 +324,7 @@ export default () => {
         toolBarRender={() => [
           <Input.Search
             key="quickSearch"
-            placeholder={intl.formatMessage({ id: 'pages.resident.quickSearchPlaceholder' }) || 'Tìm kiếm ID, tên, email...'}
+            placeholder={'Tìm kiếm ID, tên, email...'}
             allowClear
             style={{ width: 320 }}
             value={quickSearch}
@@ -341,7 +339,7 @@ export default () => {
             type="default"
             onClick={() => setFilterDrawerOpen(true)}
           >
-            {intl.formatMessage({ id: 'components.advancedFilter.open' }) || 'Lọc nâng cao'}
+            {'Bộ lọc nâng cao'}
           </Button>,
           <Button
             key="clearFilters"
@@ -349,13 +347,13 @@ export default () => {
             style={{ color: '#fa8c16', borderColor: '#fa8c16' }}
             onClick={handleClearFilters}
           >
-            {intl.formatMessage({ id: 'components.advancedFilter.clear' }) || 'Xóa bộ lọc'}
+            {'Xóa bộ lọc'}
           </Button>,
           ...(isResident
             ? []
             : [
                 <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                  {intl.formatMessage({ id: 'pages.resident.addNew' })}
+                  {'Thêm mới'}
                 </Button>,
               ]),
         ]}
@@ -377,15 +375,13 @@ export default () => {
         onApply={handleFilterSubmit}
         onClear={handleClearFilters}
         fields={filterFields}
-        quickSearchPlaceholder={intl.formatMessage({ id: 'Thông tin tìm kiếm' }) || 'Tìm kiếm ID, tên, em il...'}
+        quickSearchPlaceholder={'Tìm kiếm ID, tên, email...'}
         initialQuickSearch={quickSearch}
         initialFilters={filterRows}
       />
 
       <Modal
-        title={editingRecord
-          ? intl.formatMessage({ id: 'pages.resident.editTitle' })
-          : intl.formatMessage({ id: 'pages.resident.addTitle' })}
+        title={editingRecord ? 'Cập nhật cư dân' : 'Thêm cư dân mới'}
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
@@ -394,22 +390,22 @@ export default () => {
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="fullName"
-            label={intl.formatMessage({ id: 'pages.resident.fullName' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.resident.fullNameRequired' }) }]}
+            label={'Họ tên'}
+            rules={[{ required: true, message: 'Vui lòng nhập họ tên' }]}
           >
-            <Input placeholder={intl.formatMessage({ id: 'pages.resident.fullNamePlaceholder' })} />
+            <Input placeholder={'Nhập họ tên'} />
           </Form.Item>
           {!editingRecord && (
             <>
               <Form.Item
                 name="email"
-                label={intl.formatMessage({ id: 'pages.resident.email' })}
+                label={'Email'}
                 rules={[
-                  { required: true, message: intl.formatMessage({ id: 'pages.resident.emailRequired' }) },
+                  { required: true, message: 'Vui lòng nhập email' },
                   {
                     validator: (_, value) => {
                       if (!value || String(value).trim() === '') {
-                        return Promise.reject(new Error(intl.formatMessage({ id: 'pages.resident.emailRequired' })));
+                        return Promise.reject(new Error('Vui lòng nhập email'));
                       }
                       if (String(value).includes('@')) {
                         return Promise.reject(new Error('Vui lòng chỉ nhập phần trước @gmail.com'));
@@ -427,27 +423,27 @@ export default () => {
               </Form.Item>
               <Form.Item
                 name="password"
-                label={intl.formatMessage({ id: 'pages.resident.password' })}
-                rules={[{ required: true, message: intl.formatMessage({ id: 'pages.resident.passwordRequired' }) }]}
+                label={'Mật khẩu'}
+                rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
               >
-                <Input.Password placeholder={intl.formatMessage({ id: 'pages.resident.passwordPlaceholder' })} />
+                <Input.Password placeholder={'Nhập mật khẩu'} />
               </Form.Item>
             </>
           )}
           <Form.Item
             name="phone"
-            label={intl.formatMessage({ id: 'pages.resident.phone' })}
+            label={'Số điện thoại'}
           >
-            <Input placeholder={intl.formatMessage({ id: 'pages.resident.phonePlaceholder' })} />
+            <Input placeholder={'Nhập số điện thoại'} />
           </Form.Item>
           <Form.Item
             name="apartmentId"
-            label={intl.formatMessage({ id: 'pages.resident.apartment' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.resident.apartmentRequired' }) }]}
+            label={'Căn hộ'}
+            rules={[{ required: true, message: 'Vui lòng chọn căn hộ' }]}
           >
             <Select
               showSearch
-              placeholder={intl.formatMessage({ id: 'pages.resident.apartmentPlaceholder' })}
+              placeholder={'Nhập ID căn hộ'}
               optionFilterProp="label"
               filterOption={(input, option) =>
                 option?.label
@@ -468,34 +464,27 @@ export default () => {
           </Form.Item>
           <Form.Item
             name="apartmentStatus"
-            label={intl.formatMessage({ id: 'pages.resident.apartmentStatus' })}
-            rules={[{ required: !editingRecord, message: intl.formatMessage({ id: 'pages.resident.apartmentStatusRequired' }) }]}
+            label={'Trạng thái căn hộ'}
+            rules={[{ required: !editingRecord, message: 'Vui lòng chọn trạng thái căn hộ' }]}
           >
-            <Select placeholder={intl.formatMessage({ id: 'pages.resident.apartmentStatusPlaceholder' })}>
-              <Select.Option value="RENTED">
-                {intl.formatMessage({ id: 'pages.resident.apartmentStatus.rented' })}
-              </Select.Option>
-              <Select.Option value="SOLD">
-                {intl.formatMessage({ id: 'pages.resident.apartmentStatus.sold' })}
-              </Select.Option>
+            <Select placeholder={'Chọn trạng thái căn hộ'}>
+              <Select.Option value="RENTED">{'Thuê nhà '}</Select.Option>
+              <Select.Option value="SOLD">{'Nhà mua '}</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
             name="identityCard"
-            label={intl.formatMessage({ id: 'pages.resident.identityCard' })}
+            label={'CMND/CCCD'}
           >
-            <Input placeholder={intl.formatMessage({ id: 'pages.resident.identityCardPlaceholder' })} />
+            <Input placeholder={'Nhập số CMND/CCCD'} />
           </Form.Item>
           {editingRecord && (
             <Form.Item
               name="isActive"
-              label={intl.formatMessage({ id: 'pages.resident.status' })}
+              label={'Trạng thái'}
               valuePropName="checked"
             >
-              <Switch
-                checkedChildren={intl.formatMessage({ id: 'pages.resident.active' })}
-                unCheckedChildren={intl.formatMessage({ id: 'pages.resident.inactive' })}
-              />
+              <Switch checkedChildren={'Hoạt động'} unCheckedChildren={'Không hoạt động'} />
             </Form.Item>
           )}
         </Form>

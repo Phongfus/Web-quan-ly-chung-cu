@@ -4,7 +4,7 @@ import {
   SettingOutlined,
   GlobalOutlined,
 } from '@ant-design/icons';
-import { history, useModel, useIntl, setLocale, getLocale } from '@umijs/max';
+import { history, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';
 import { Spin } from 'antd';
 import React, { useState } from 'react';
@@ -25,16 +25,7 @@ export const AvatarName = () => {
 
 export const AvatarDropdown: React.FC<any> = ({ children }) => {
   const { initialState, setInitialState } = useModel('@@initialState');
-  const intl = useIntl();
-  const [showLangMenu, setShowLangMenu] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const currentLocale = getLocale();
-
-  const handleLanguageChange = (lang: string) => {
-    setLocale(lang, false);
-    setShowLangMenu(false);
-    setDropdownOpen(false);
-  };
 
   const onMenuClick: MenuProps['onClick'] = (event) => {
     const { key } = event;
@@ -48,20 +39,12 @@ export const AvatarDropdown: React.FC<any> = ({ children }) => {
       return;
     }
 
-    if (key === 'language') {
-      setShowLangMenu(true);
-      return;
-    }
-
     if (key === 'back') {
       setShowLangMenu(false);
       return;
     }
 
-    if (key === 'vi-VN' || key === 'en-US') {
-      handleLanguageChange(key);
-      return;
-    }
+    // other menu keys handled below
 
     history.push(`/account/${key}`);
   };
@@ -87,12 +70,7 @@ export const AvatarDropdown: React.FC<any> = ({ children }) => {
     {
       key: 'center',
       icon: <UserOutlined />,
-      label: intl.formatMessage({ id: 'component.globalHeader.avatar.personal' }),
-    },
-    {
-      key: 'language',
-      icon: <GlobalOutlined />,
-      label: intl.formatMessage({ id: 'component.globalHeader.avatar.language' }) || 'Ngôn ngữ',
+      label: 'Cá nhân',
     },
     {
       type: 'divider' as const,
@@ -100,32 +78,11 @@ export const AvatarDropdown: React.FC<any> = ({ children }) => {
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: intl.formatMessage({ id: 'component.globalHeader.avatar.logout' }),
+      label: 'Đăng xuất',
     },
   ];
 
-  const langItems = [
-    {
-      key: 'back',
-      icon: <SettingOutlined />,
-      label: '← ' + (intl.formatMessage({ id: 'component.globalHeader.avatar.back' }) || 'Quay lại'),
-    },
-    {
-      type: 'divider' as const,
-    },
-    {
-      key: 'vi-VN',
-      label: '🇻🇳 Tiếng Việt',
-      disabled: currentLocale === 'vi-VN',
-    },
-    {
-      key: 'en-US',
-      label: '🇺🇸 English',
-      disabled: currentLocale === 'en-US',
-    },
-  ];
-
-  const items = showLangMenu ? langItems : mainItems;
+  const items = mainItems;
 
   return (
     <HeaderDropdown

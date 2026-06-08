@@ -1,7 +1,6 @@
 import { Space, Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { useModel } from '@umijs/max';
-import { SelectLang } from '@umijs/max';
 import { AvatarDropdown, AvatarName } from './AvatarDropdown';
 
 export const RightContent = () => {
@@ -13,8 +12,6 @@ export const RightContent = () => {
 
   return (
     <Space size="middle">
-      <SelectLang />
-
       <AvatarDropdown>
         <Space style={{ cursor: 'pointer' }}>
           <Avatar size="small" icon={<UserOutlined />} />

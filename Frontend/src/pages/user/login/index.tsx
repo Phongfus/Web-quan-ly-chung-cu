@@ -1,6 +1,6 @@
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
-import { Helmet, SelectLang } from '@umijs/max';
+import { Helmet } from '@umijs/max';
 import { message } from 'antd';
 import { createStyles } from 'antd-style';
 import React from 'react';
@@ -50,13 +50,8 @@ const Login: React.FC = () => {
   return (
     <div className={styles.container}>
       <Helmet>
-        <title>Login</title>
+        <title>Đăng nhập</title>
       </Helmet>
-
-      {/* Language */}
-      <div style={{ position: 'fixed', right: 16, top: 16 }}>
-        <SelectLang />
-      </div>
 
       {/* Center */}
       <div
@@ -105,7 +100,7 @@ const Login: React.FC = () => {
                   marginLeft: -80,
                 }}
               >
-                Apartment System
+                Đăng nhập
               </div>
             }
             subTitle={
@@ -143,7 +138,7 @@ const Login: React.FC = () => {
                 size: 'large',
                 prefix: <LockOutlined />,
               }}
-              placeholder="Password"
+              placeholder="Mật khẩu"
               rules={[
                 { required: true, message: 'Vui lòng nhập mật khẩu!' },
               ]}

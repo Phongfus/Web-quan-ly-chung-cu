@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { List, Avatar, Button, Modal, Input, message, Space, Dropdown } from 'antd';
 import { MessageOutlined, SendOutlined, EllipsisOutlined, PhoneOutlined } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
 import { useModel } from '@umijs/max';
 import { getConversations, getMessages, sendMessage, createConversation, ConversationItem, MessageItem, updateMessage, deleteMessage, deleteConversation } from '@/services/message';
 import { getUsers, UserItem } from '@/services/user';
@@ -12,7 +11,6 @@ const { TextArea } = Input;
 type LocalConversationItem = ConversationItem & { hasUnread: boolean };
 
 export default () => {
-  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const [conversations, setConversations] = useState<LocalConversationItem[]>([]);
@@ -49,7 +47,7 @@ export default () => {
       });
       setConversations(localData);
     } catch (error) {
-      message.error( intl.formatMessage({ id: 'pages.message.loadConversationError' }));
+      message.error('Tải cuộc trò chuyện thất bại');
     }
   };
 
@@ -62,7 +60,7 @@ export default () => {
         : data.filter(user => user.role === 'RESIDENT');
       setUsers(filteredUsers);
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.message.loadUsersError' }));
+      message.error('Tải danh sách người dùng thất bại');
     }
   };
 
@@ -142,7 +140,7 @@ export default () => {
       await loadConversations();
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (error) {
-      message.error( intl.formatMessage({ id: 'pages.message.loadMessagesError' }));
+      message.error('Tải tin nhắn thất bại');
     }
   };
 
@@ -156,7 +154,7 @@ export default () => {
       // Scroll to bottom
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.message.sendError' }));
+      message.error('Gửi tin nhắn thất bại');
     }
   };
 
@@ -165,9 +163,9 @@ export default () => {
       const conv = await createConversation(userId);
       setConversations((prev: LocalConversationItem[]) => [{ ...conv, hasUnread: false }, ...prev]);
       setIsCreateModalOpen(false);
-      message.success( intl.formatMessage({ id: 'pages.message.createSuccess' }));
+      message.success('Tạo cuộc trò chuyện thành công');
     } catch (error) {
-      message.error( intl.formatMessage({ id: 'pages.message.createError' }));
+      message.error('Tạo cuộc trò chuyện thất bại');
     }
   };
 
@@ -184,30 +182,26 @@ export default () => {
       setMessages((prev: MessageItem[]) => prev.map((m) => m.id === editingMessageId ? updatedMsg : m));
       setEditingMessageId(null);
       setEditingContent('');
-      message.success( intl.formatMessage({ id: 'pages.message.updateSuccess' }));
+      message.success('Cập nhật tin nhắn thành công');
     } catch (error) {
-      message.error( intl.formatMessage({ id: 'pages.message.updateError' }));
+      message.error('Cập nhật tin nhắn thất bại');
     }
   };
 
   const handleDeleteMessage = (messageId: string) => {
     Modal.confirm({
-      title: intl.formatMessage({ id: 'pages.message.confirmDeleteTitle' }),
-      content: intl.formatMessage({ id: 'pages.message.confirmDeleteMessage' }),
-      okText: intl.formatMessage({ id: 'pages.common.delete' }),
-      cancelText: intl.formatMessage({ id: 'pages.common.cancel' }),
+      title: 'Xác nhận xóa tin nhắn',
+      content: 'Bạn có chắc chắn muốn xóa tin nhắn này?',
+      okText: 'Xóa',
+      cancelText: 'Hủy',
       onOk: async () => {
         try {
           await deleteMessage(messageId);
           setMessages((prev: MessageItem[]) => prev.filter((m) => m.id !== messageId));
 
-          message.success(
-            intl.formatMessage({ id: 'pages.message.deleteSuccess' })
-          );
+          message.success('Xóa tin nhắn thành công');
         } catch (error) {
-          message.error(
-            intl.formatMessage({ id: 'pages.message.deleteError' })
-          );
+          message.error('Xóa tin nhắn thất bại');
         }
       },
     });
@@ -218,18 +212,18 @@ export default () => {
     const otherUser = getOtherUser(selectedConversation);
     if (otherUser.phone) {
       navigator.clipboard.writeText(otherUser.phone);
-      message.success( `${intl.formatMessage({ id: 'pages.message.phone' })}: ${otherUser.phone}`);
+      message.success(`Số điện thoại: ${otherUser.phone}`);
     } else {
-      message.error( intl.formatMessage({ id: 'pages.message.phoneUnavailable' }));
+      message.error('Không có số điện thoại');
     }
   };
 
   const handleDeleteConversation = (conversationId: string) => {
     Modal.confirm({
-      title: intl.formatMessage({ id: 'pages.message.confirmDeleteTitle' }),
-      content: intl.formatMessage({ id: 'pages.message.confirmDeleteConversationMessage'}),
-      okText: intl.formatMessage({ id: 'pages.common.delete' }),
-      cancelText: intl.formatMessage({ id: 'pages.common.cancel' }),
+      title: 'Xác nhận xóa cuộc trò chuyện',
+      content: 'Bạn có chắc chắn muốn xóa cuộc trò chuyện này?',
+      okText: 'Xóa',
+      cancelText: 'Hủy',
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
@@ -238,10 +232,9 @@ export default () => {
           if (selectedConversation?.id === conversationId) {
             setIsModalOpen(false);
           }
-          message.success( intl.formatMessage({ id: 'pages.message.deleteConversationSuccess'}));
+          message.success('Xóa cuộc trò chuyện thành công');
         } catch (error) {
-          message.error( intl.formatMessage({ id: 'pages.message.deleteConversationError'})
-          );
+          message.error('Xóa cuộc trò chuyện thất bại');
         }
       },
     });
@@ -251,7 +244,7 @@ export default () => {
     if (!conversation?.user1 || !conversation?.user2 || !currentUser) {
       return {
         id: "",
-        fullName: intl.formatMessage({ id: 'pages.common.user' }),
+        fullName: 'Người dùng',
         phone: "",
         role: "RESIDENT"
       };
@@ -271,10 +264,10 @@ export default () => {
   return (
     <>
       <div style={{ padding: 24 }}>
-        <h2>{intl.formatMessage({ id: 'pages.message.title' }) || 'Nhắn tin'}</h2>
+        <h2>{'Nhắn tin'}</h2>
         <Space style={{ marginBottom: 16 }}>
           <Button type="primary" icon={<MessageOutlined />} onClick={() => setIsCreateModalOpen(true)}>
-            {intl.formatMessage({ id: 'pages.message.create' }) || 'Tạo cuộc trò chuyện'}
+            {'Tạo cuộc trò chuyện'}
           </Button>
         </Space>
         <List
@@ -285,7 +278,7 @@ export default () => {
             const menuItems = [
               {
                 key: 'delete',
-                label: intl.formatMessage({ id: 'pages.common.delete' }),
+                label: 'Xóa',
                 onClick: () => handleDeleteConversation(conversation.id),
                 danger: true,
               },
@@ -312,8 +305,8 @@ export default () => {
               >
                 <List.Item.Meta
                   avatar={<Avatar>{otherUser?.fullName?.[0] || "U"}</Avatar>}
-                  title={<span style={{ fontWeight: conversation.hasUnread ? 'bold' : 'normal', color: conversation.hasUnread ? '#1890ff' : 'inherit' }}>{otherUser?.fullName || intl.formatMessage({ id: 'pages.common.user' })}</span>}
-                  description={lastMessage?.content || intl.formatMessage({ id: 'pages.message.noMessage' })}
+                  title={<span style={{ fontWeight: conversation.hasUnread ? 'bold' : 'normal', color: conversation.hasUnread ? '#1890ff' : 'inherit' }}>{otherUser?.fullName || 'Người dùng'}</span>}
+                  description={lastMessage?.content || 'Chưa có tin nhắn'}
                 />
               </List.Item>
             );
@@ -332,7 +325,7 @@ export default () => {
               size="small"
               style={{ marginRight: 32 }}
             >
-              {intl.formatMessage({ id: 'pages.message.call' })}
+              {'Gọi điện'}
             </Button>
           </div>
         }
@@ -365,12 +358,12 @@ export default () => {
           const menuItems = [
             {
               key: 'edit',
-              label: intl.formatMessage({ id: 'pages.common.edit' }),
+              label: 'Sửa',
               onClick: () => handleEditMessage(msg),
             },
             {
               key: 'delete',
-              label: intl.formatMessage({ id: 'pages.common.delete' }),
+              label: 'Xóa',
               onClick: () => handleDeleteMessage(msg.id),
               danger: true,
             },
@@ -424,14 +417,14 @@ export default () => {
                             type="primary"
                             onClick={handleSaveEditMessage}
                           >
-                            {intl.formatMessage({ id: 'pages.common.save' })}
+                            {'Lưu'}
                           </Button>
 
                           <Button
                             size="small"
                             onClick={() => setEditingMessageId(null)}
                           >
-                            {intl.formatMessage({ id: 'pages.common.cancel' })}
+                            {'Hủy'}
                           </Button>
                         </Space>
                       </div>
@@ -466,7 +459,7 @@ export default () => {
           <TextArea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={intl.formatMessage({ id: 'pages.message.placeholder' })}
+            placeholder={'Nhập tin nhắn...'}
             autoSize={{ minRows: 1, maxRows: 3 }}
             onPressEnter={(e) => {
               if (!e.shiftKey) {
@@ -476,20 +469,20 @@ export default () => {
             }}
           />
           <Button type="primary" icon={<SendOutlined />} onClick={handleSendMessage}>
-            {intl.formatMessage({ id: 'pages.common.send' })}
+            {'Gửi'}
           </Button>
         </Space.Compact>
       </Modal>
 
       <Modal
-        title={intl.formatMessage({ id: 'pages.message.selectUser' }) || 'Chọn người dùng'}
+        title={'Chọn người dùng'}
         open={isCreateModalOpen}
         onCancel={() => setIsCreateModalOpen(false)}
         footer={null}
       >
         {usersWithoutConversation.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#999', padding: '20px 0' }}>
-            { intl.formatMessage({ id: 'pages.message.noMoreUsers'})}
+            {'Không còn người dùng nào để thêm'}
           </p>
         ) : (
           <List
@@ -502,7 +495,7 @@ export default () => {
                     type="primary"
                     onClick={() => handleCreateConversation(user.id)}
                   >
-                    {intl.formatMessage({ id: 'pages.common.select' })}
+                    {'Chọn'}
                   </Button>,
                 ]}
               >

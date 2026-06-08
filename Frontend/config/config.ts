@@ -7,8 +7,8 @@ export default defineConfig({
   title: 'Apartment Management',
 
   layout: {
-    title: 'Building Manager',
-    locale: true,
+    title: 'Hệ thống quản lý chung cư',
+    locale: false,
     layout: 'side',
     siderWidth: 208,
     navTheme: 'light',
@@ -40,11 +40,7 @@ export default defineConfig({
     preset: 'antd',
   },
 
-  locale: {
-    default: 'vi-VN',
-    antd: true,
-    baseNavigator: true,
-  },
+  locale: false,
 
   fastRefresh: true,
 

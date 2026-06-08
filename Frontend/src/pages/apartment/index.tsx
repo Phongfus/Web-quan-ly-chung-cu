@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { ProTable, ActionType, ProColumns } from "@ant-design/pro-components";
 import { Button, Tag, Modal, Form, Input, InputNumber, Select, message, Table, Space } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import { useIntl, useModel } from "@umijs/max";
+import { useModel } from "@umijs/max";
 
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
@@ -20,15 +20,7 @@ import { getFloors, FloorItem } from "@/services/floor";
 import { getApartmentTypes, ApartmentTypeItem } from "@/services/apartmentType";
 
 const { Option } = Select;
-
-/**
- * Trang quản lý căn hộ
- * - Hiển thị danh sách căn hộ
- * - Cho phép lọc, tìm kiếm, sắp xếp
- * - Cho phép admin thêm/sửa/xóa căn hộ
- */
 export default () => {
-  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const isResident = currentUser?.role === 'RESIDENT';
@@ -87,14 +79,14 @@ export default () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case "AVAILABLE":
-        return intl.formatMessage({ id: 'pages.apartment.status.available' });
+        return 'Trống';
       case "SOLD":
-        return intl.formatMessage({ id: 'pages.apartment.status.sold' });
+        return 'Đã bán';
       case "RENTED":
       case "OCCUPIED":
-        return intl.formatMessage({ id: 'pages.apartment.status.rented' });
+        return 'Cho thuê';
       case "MAINTENANCE":
-        return intl.formatMessage({ id: 'pages.apartment.status.maintenance' });
+        return 'Bảo trì';
       default:
         return status;
     }
@@ -103,24 +95,24 @@ export default () => {
   // Định nghĩa các trường lọc cho drawer lọc nâng cao
   const filterFields: FilterFieldDefinition[] = [
     { key: 'id', label: 'ID', type: 'text' },
-    { key: 'code', label: intl.formatMessage({ id: 'pages.apartment.code' }), type: 'text' },
+    { key: 'code', label: 'Mã căn', type: 'text' },
     {
       key: 'status',
-      label: intl.formatMessage({ id: 'pages.apartment.status' }),
+      label: 'Trạng thái',
       type: 'select',
       options: [
-        { label: intl.formatMessage({ id: 'pages.apartment.status.available' }), value: 'AVAILABLE' },
-        { label: intl.formatMessage({ id: 'pages.apartment.status.sold' }), value: 'SOLD' },
-        { label: intl.formatMessage({ id: 'pages.apartment.status.rented' }), value: 'RENTED' },
-        { label: intl.formatMessage({ id: 'pages.apartment.status.maintenance' }), value: 'MAINTENANCE' },
+        { label: 'Trống', value: 'AVAILABLE' },
+        { label: 'Đã bán', value: 'SOLD' },
+        { label: 'Cho thuê', value: 'RENTED' },
+        { label: 'Bảo trì', value: 'MAINTENANCE' },
       ],
     },
-    { key: 'floorNumber', label: intl.formatMessage({ id: 'pages.apartment.floor' }), type: 'number' },
-    { key: 'typeName', label: intl.formatMessage({ id: 'pages.apartment.type' }), type: 'text' },
+    { key: 'floorNumber', label: 'Tầng', type: 'number' },
+    { key: 'typeName', label: 'Loại', type: 'text' },
     { key: 'residentName', label: 'Tên chủ hộ', type: 'text' },
-    { key: 'salePrice', label: intl.formatMessage({ id: 'pages.apartment.salePrice' }), type: 'number' },
-    { key: 'rentPrice', label: intl.formatMessage({ id: 'pages.apartment.rentPrice' }), type: 'number' },
-    { key: 'area', label: intl.formatMessage({ id: 'pages.apartment.area' }), type: 'number' },
+    { key: 'salePrice', label: 'Giá bán (VND)', type: 'number' },
+    { key: 'rentPrice', label: 'Giá thuê (VND)', type: 'number' },
+    { key: 'area', label: 'Diện tích (m²)', type: 'number' },
   ];
 
   // Lấy giá trị cho bộ lọc theo trường mở rộng
@@ -140,7 +132,7 @@ export default () => {
   // Định nghĩa các cột hiển thị trong bảng căn hộ
   const columns: ProColumns<ApartmentItem>[] = [
     {
-      title: intl.formatMessage({ id: 'pages.common.index' }),
+      title: 'STT',
       dataIndex: "index",
       valueType: "index",
       width: 60,
@@ -153,12 +145,12 @@ export default () => {
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.apartment.code' }),
+      title: 'Mã căn',
       dataIndex: "code",
       width: 80,
     },
     {
-      title: intl.formatMessage({ id: 'pages.apartment.residentId' }),
+      title: 'Mã cư dân',
       dataIndex: ["residents", 0, "id"],
       width: 120,
       search: false,
@@ -166,7 +158,7 @@ export default () => {
         record.residents && record.residents.length > 0
           ? record.residents[0].id
           : <span style={{ color: '#ccc' }}>
-              {intl.formatMessage({ id: 'pages.apartment.noResident' })}
+              {'Chưa có cư dân'}
             </span>,
     },
     {
@@ -178,17 +170,17 @@ export default () => {
         record.residents && record.residents.length > 0
           ? record.residents[0].user.fullName
           : <span style={{ color: '#ccc' }}>
-              {intl.formatMessage({ id: 'pages.apartment.noResident' })}
+              {'Chưa có cư dân'}
             </span>,
     },
     {
-      title: intl.formatMessage({ id: 'pages.apartment.floor' }),
+      title: 'Tầng',
       dataIndex: ["floor", "number"],
       width: 60,
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.apartment.type' }),
+      title: 'Loại',
       dataIndex: ["type", "name"],
       width: 90,
       search: false,
@@ -196,7 +188,7 @@ export default () => {
     {
       title: (
         <Space>
-          {intl.formatMessage({ id: 'pages.apartment.salePrice' })}
+          {'Giá bán (VND)'}
           <SortIcon
             sortDirection={salePriceSort}
             onSort={(direction) => {
@@ -219,7 +211,7 @@ export default () => {
     {
       title: (
         <Space>
-          {intl.formatMessage({ id: 'pages.apartment.rentPrice' })}
+          {'Giá thuê (VND)'}
           <SortIcon
             sortDirection={rentPriceSort}
             onSort={(direction) => {
@@ -242,7 +234,7 @@ export default () => {
     {
       title: (
         <Space>
-          {intl.formatMessage({ id: 'pages.apartment.area' })}
+          {'Diện tích (m²)'}
           <SortIcon
             sortDirection={areaSort}
             onSort={(direction) => {
@@ -259,7 +251,7 @@ export default () => {
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.apartment.status' }),
+      title: 'Trạng thái',
       dataIndex: "status",
       width: 90,
       // Hiển thị trạng thái căn hộ với tag màu
@@ -273,7 +265,7 @@ export default () => {
   ? []
   : [
       {
-        title: intl.formatMessage({ id: 'pages.apartment.actions' }),
+        title: 'Thao tác',
         valueType: 'option' as const,
         width: 180,
         // Các nút hành động chỉ dành cho người không phải cư dân
@@ -284,7 +276,7 @@ export default () => {
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           >
-            {intl.formatMessage({ id: 'pages.apartment.edit' })}
+                {'Sửa'}
           </Button>,
           <Button
             key="delete"
@@ -293,7 +285,7 @@ export default () => {
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
           >
-            {intl.formatMessage({ id: 'pages.apartment.delete' })}
+                {'Xóa'}
           </Button>,
         ],
       },
@@ -317,15 +309,15 @@ export default () => {
   // Xóa căn hộ sau khi xác nhận
   const handleDelete = async (id: string) => {
     Modal.confirm({
-      title: intl.formatMessage({ id: 'pages.apartment.deleteConfirm' }),
-      content: intl.formatMessage({ id: 'pages.apartment.deleteContent' }),
+      title: 'Xác nhận xóa?',
+      content: 'Bạn có chắc muốn xóa căn hộ này?',
       onOk: async () => {
         try {
           await deleteApartment(id);
-          message.success(intl.formatMessage({ id: 'pages.apartment.deleteSuccess' }));
+          message.success('Đã xóa thành công');
           actionRef.current?.reload();
         } catch {
-          message.error(intl.formatMessage({ id: 'pages.apartment.deleteError' }));
+          message.error('Xóa thất bại');
         }
       },
     });
@@ -346,17 +338,17 @@ export default () => {
       if (data.rentPrice === undefined || data.rentPrice === null) {
         delete data.rentPrice;
       }
-      if (editingRecord) {
+        if (editingRecord) {
         await updateApartment(editingRecord.id, data);
-        message.success(intl.formatMessage({ id: 'pages.apartment.updateSuccess' }));
+        message.success('Cập nhật thành công');
       } else {
         await createApartment(data);
-        message.success(intl.formatMessage({ id: 'pages.apartment.createSuccess' }));
+        message.success('Tạo mới thành công');
       }
       setIsModalOpen(false);
       actionRef.current?.reload();
     } catch {
-      message.error(intl.formatMessage({ id: 'pages.apartment.actionError' }));
+      message.error('Thao tác thất bại');
     }
   };
 
@@ -467,7 +459,7 @@ export default () => {
     <>
       {/* Bảng chính quản lý danh sách căn hộ */}
       <ProTable<ApartmentItem>
-        headerTitle={intl.formatMessage({ id: 'pages.apartment.title' })}
+        headerTitle={'Quản lý căn hộ'}
         actionRef={actionRef}
         rowKey="id"
         search={false}
@@ -480,7 +472,7 @@ export default () => {
         toolBarRender={() => [
           <Input.Search
             key="quickSearch"
-            placeholder={intl.formatMessage({ id: 'pages.apartment.quickSearchPlaceholder' })}
+            placeholder={'Tìm ID hoặc mã căn'}
             allowClear
             style={{ width: 320 }}
             value={quickSearch}
@@ -495,7 +487,7 @@ export default () => {
             type="default"
             onClick={() => setFilterDrawerOpen(true)}
           >
-            {intl.formatMessage({ id: 'components.advancedFilter.open' })}
+            {'Bộ lọc nâng cao'}
           </Button>,
           <Button
             key="clearFilters"
@@ -503,7 +495,7 @@ export default () => {
             style={{ color: '#fa8c16', borderColor: '#fa8c16' }}
             onClick={handleClearFilters}
           >
-            {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
+            {'Xóa bộ lọc'}
           </Button>,
           ...(isResident ? [] : [
             <Button
@@ -512,7 +504,7 @@ export default () => {
               icon={<PlusOutlined />}
               onClick={handleAdd}
             >
-              {intl.formatMessage({ id: 'pages.apartment.addNew' })}
+              {'Thêm mới'}
             </Button>,
           ]),
         ]}
@@ -534,7 +526,7 @@ export default () => {
           return (
             <Table.Summary.Row style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5', position: 'sticky', bottom: 0, zIndex: 1 }}>
               <Table.Summary.Cell index={0} colSpan={7}>
-                {intl.formatMessage({ id: 'pages.common.total' })}
+                {'Tổng'}
               </Table.Summary.Cell>
               <Table.Summary.Cell index={6}>
                 {totalSalePrice > 0 ? `${totalSalePrice.toLocaleString('vi-VN')}` : '-'}
@@ -557,16 +549,14 @@ export default () => {
         onApply={handleFilterSubmit}
         onClear={handleClearFilters}
         fields={filterFields}
-        quickSearchPlaceholder={intl.formatMessage({ id: 'pages.apartment.quickSearchPlaceholder' })}
+        quickSearchPlaceholder={'Tìm ID hoặc mã căn'}
         initialQuickSearch={quickSearch}
         initialFilters={filterRows}
       />
 
       {/* Modal thêm / sửa căn hộ */}
       <Modal
-        title={editingRecord
-          ? intl.formatMessage({ id: 'pages.apartment.editTitle' })
-          : intl.formatMessage({ id: 'pages.apartment.addTitle' })}
+        title={editingRecord ? 'Cập nhật căn hộ' : 'Thêm căn hộ mới'}
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
@@ -575,18 +565,18 @@ export default () => {
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="code"
-            label={intl.formatMessage({ id: 'pages.apartment.code' })}
+            label={'Mã căn'}
             rules={[{ required: true }]}
           >
-            <Input placeholder={intl.formatMessage({ id: 'pages.apartment.codePlaceholder' })} />
+            <Input placeholder={'Nhập mã căn hộ'} />
           </Form.Item>
 
           <Form.Item
             name="floorId"
-            label={intl.formatMessage({ id: 'pages.apartment.floorId' })}
+            label={'ID Tầng'}
             rules={[{ required: true }]}
           >
-            <Select placeholder={intl.formatMessage({ id: 'pages.apartment.floorIdPlaceholder' })}>
+            <Select placeholder={'Nhập ID tầng'}>
               {floors.map((floor) => (
                 <Select.Option key={floor.id} value={floor.id}>
                   {floor.number}
@@ -597,10 +587,10 @@ export default () => {
 
           <Form.Item
             name="typeId"
-            label={intl.formatMessage({ id: 'pages.apartment.typeId' })}
+            label={'ID Loại'}
             rules={[{ required: true }]}
           >
-            <Select placeholder={intl.formatMessage({ id: 'pages.apartment.typeIdPlaceholder' })}>
+            <Select placeholder={'Nhập ID loại'}>
               {apartmentTypes.map((type) => (
                 <Select.Option key={type.id} value={type.id}>
                   {type.name}
@@ -609,44 +599,36 @@ export default () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="salePrice" label={intl.formatMessage({ id: 'pages.apartment.salePrice' })}>
+          <Form.Item name="salePrice" label={'Giá bán (VND)'}>
             <InputNumber
               min={0}
               style={{ width: "100%" }}
-              placeholder={intl.formatMessage({ id: 'pages.apartment.salePricePlaceholder' })}
+              placeholder={'Nhập giá bán'}
             />
           </Form.Item>
 
-          <Form.Item name="rentPrice" label={intl.formatMessage({ id: 'pages.apartment.rentPrice' })}>
+          <Form.Item name="rentPrice" label={'Giá thuê (VND)'}>
             <InputNumber
               min={0}
               style={{ width: "100%" }}
-              placeholder={intl.formatMessage({ id: 'pages.apartment.rentPricePlaceholder' })}
+              placeholder={'Nhập giá thuê'}
             />
           </Form.Item>      
 
-          <Form.Item name="area" label={intl.formatMessage({ id: 'pages.apartment.area' })}>
-            <Input type="number" placeholder={intl.formatMessage({ id: 'pages.apartment.areaPlaceholder' })} />
+          <Form.Item name="area" label={'Diện tích (m²)'}>
+            <Input type="number" placeholder={'Nhập diện tích'} />
           </Form.Item>
 
           <Form.Item
             name="status"
-            label={intl.formatMessage({ id: 'pages.apartment.status' })}
+            label={'Trạng thái'}
             rules={[{ required: true }]}
           >
-            <Select placeholder={intl.formatMessage({ id: 'pages.apartment.statusPlaceholder' })}>
-                <Option value="AVAILABLE">
-                {intl.formatMessage({ id: 'pages.apartment.status.available' })}
-              </Option>
-              <Option value="SOLD">
-                {intl.formatMessage({ id: 'pages.apartment.status.sold' })}
-              </Option>
-              <Option value="RENTED">
-                {intl.formatMessage({ id: 'pages.apartment.status.rented' })}
-              </Option>
-              <Option value="MAINTENANCE">
-                {intl.formatMessage({ id: 'pages.apartment.status.maintenance' })}
-              </Option>
+            <Select placeholder={'Chọn trạng thái'}>
+                <Option value="AVAILABLE">{'Trống'}</Option>
+                <Option value="SOLD">{'Đã bán'}</Option>
+                <Option value="RENTED">{'Cho thuê'}</Option>
+                <Option value="MAINTENANCE">{'Bảo trì'}</Option>
             </Select>
           </Form.Item>
         </Form>

@@ -1,31 +1,22 @@
-import { Card, Button, Radio, Space, Typography, Divider, Modal, Form, Input, message } from 'antd';
-import { GlobalOutlined, LogoutOutlined, LockOutlined } from '@ant-design/icons';
-import { useIntl, setLocale, getLocale, useModel, history } from '@umijs/max';
+import { Card, Button, Space, Typography, Modal, Form, Input, message } from 'antd';
+import { LogoutOutlined, LockOutlined } from '@ant-design/icons';
+import { useModel, history, request } from '@umijs/max';
 import { useState } from 'react';
-import { request } from '@umijs/max';
 
 const { Title, Text } = Typography;
 
 export default () => {
-  const intl = useIntl();
   const { setInitialState } = useModel('@@initialState');
-  const currentLocale = getLocale();
-  const [selectedLang, setSelectedLang] = useState(currentLocale);
   const [changePasswordForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
 
-  const handleLanguageChange = (lang: string) => {
-    setSelectedLang(lang);
-    setLocale(lang, false);
-  };
-
   const handleLogout = () => {
     Modal.confirm({
-      title: intl.formatMessage({ id: 'pages.settings.logout.confirm' }) || 'Xác nhận đăng xuất',
-      content: intl.formatMessage({ id: 'pages.settings.logout.message' }) || 'Bạn có chắc muốn đăng xuất?',
-      okText: intl.formatMessage({ id: 'pages.settings.logout.ok' }) || 'Đăng xuất',
-      cancelText: intl.formatMessage({ id: 'pages.settings.logout.cancel' }) || 'Hủy',
+      title: 'Xác nhận đăng xuất',
+      content: 'Bạn có chắc muốn đăng xuất?',
+      okText: 'Đăng xuất',
+      cancelText: 'Hủy',
       onOk: () => {
         localStorage.removeItem('token');
         setInitialState((s: any) => ({ ...s, currentUser: undefined }));
@@ -34,69 +25,35 @@ export default () => {
     });
   };
 
-const handleChangePassword = async (values: any) => {
-  setLoading(true);
+  const handleChangePassword = async (values: any) => {
+    setLoading(true);
 
-  try {
-    const data = await request('/auth/change-password', {
-      method: 'POST',
-      data: {
-        currentPassword: values.currentPassword,
-        newPassword: values.newPassword,
-      },
-    });
+    try {
+      const data = await request('/auth/change-password', {
+        method: 'POST',
+        data: {
+          currentPassword: values.currentPassword,
+          newPassword: values.newPassword,
+        },
+      });
 
-    if (data) {
-      message.success(
-        intl.formatMessage({
-          id: 'pages.settings.password.success',
-        }) || 'Đổi mật khẩu thành công',
-      );
+      if (data) {
+        message.success('Đổi mật khẩu thành công');
 
-      changePasswordForm.resetFields();
+        changePasswordForm.resetFields();
 
-      setShowPasswordForm(false);
+        setShowPasswordForm(false);
+      }
+    } catch (error: any) {
+      message.error(error?.data?.message || 'Có lỗi xảy ra khi đổi mật khẩu');
+    } finally {
+      setLoading(false);
     }
-  } catch (error: any) {
-    message.error(
-      error?.data?.message || 'Có lỗi xảy ra khi đổi mật khẩu',
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div>
-      <Title level={2}>
-        {intl.formatMessage({ id: 'pages.settings.title' }) || 'Cài đặt'}
-      </Title>
-
-      <Card style={{ marginBottom: 24 }}>
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <div>
-            <Space>
-              <GlobalOutlined style={{ fontSize: 20 }} />
-              <Title level={4} style={{ margin: 0 }}>
-                {intl.formatMessage({ id: 'pages.settings.language' }) || 'Ngôn ngữ'}
-              </Title>
-            </Space>
-            <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
-              {intl.formatMessage({ id: 'pages.settings.language.desc' }) || 'Chọn ngôn ngữ hiển thị cho hệ thống'}
-            </Text>
-          </div>
-
-          <Radio.Group
-            value={selectedLang}
-            onChange={(e) => handleLanguageChange(e.target.value)}
-            optionType="button"
-            buttonStyle="solid"
-          >
-            <Radio.Button value="vi-VN">🇻🇳 Tiếng Việt</Radio.Button>
-            <Radio.Button value="en-US">🇺🇸 English</Radio.Button>
-          </Radio.Group>
-        </Space>
-      </Card>
+      <Title level={2}>Cài đặt</Title>
 
       <Card style={{ marginBottom: 24 }}>
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -104,11 +61,11 @@ const handleChangePassword = async (values: any) => {
             <Space>
               <LockOutlined style={{ fontSize: 20, color: '#1890ff' }} />
               <Title level={4} style={{ margin: 0 }}>
-                {intl.formatMessage({ id: 'pages.settings.password' }) || 'Đổi mật khẩu'}
+                Đổi mật khẩu
               </Title>
             </Space>
             <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
-              {intl.formatMessage({ id: 'pages.settings.password.desc' }) || 'Thay đổi mật khẩu tài khoản của bạn'}
+              Thay đổi mật khẩu tài khoản của bạn
             </Text>
           </div>
 
@@ -119,7 +76,7 @@ const handleChangePassword = async (values: any) => {
               onClick={() => setShowPasswordForm(true)}
               size="large"
             >
-              {intl.formatMessage({ id: 'pages.settings.password.button' }) || 'Đổi mật khẩu'}
+              Đổi mật khẩu
             </Button>
           ) : (
             <Form
@@ -130,17 +87,15 @@ const handleChangePassword = async (values: any) => {
             >
               <Form.Item
                 name="currentPassword"
-                label={intl.formatMessage({ id: 'pages.settings.password.current' }) || 'Mật khẩu hiện tại'}
-                rules={[
-                  { required: true, message: 'Vui lòng nhập mật khẩu hiện tại' },
-                ]}
+                label="Mật khẩu hiện tại"
+                rules={[{ required: true, message: 'Vui lòng nhập mật khẩu hiện tại' }]}
               >
                 <Input.Password placeholder="Nhập mật khẩu hiện tại" />
               </Form.Item>
 
               <Form.Item
                 name="newPassword"
-                label={intl.formatMessage({ id: 'pages.settings.password.new' }) || 'Mật khẩu mới'}
+                label="Mật khẩu mới"
                 rules={[
                   { required: true, message: 'Vui lòng nhập mật khẩu mới' },
                   { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự' },
@@ -151,7 +106,7 @@ const handleChangePassword = async (values: any) => {
 
               <Form.Item
                 name="confirmPassword"
-                label={intl.formatMessage({ id: 'pages.settings.password.confirm' }) || 'Xác nhận mật khẩu mới'}
+                label="Xác nhận mật khẩu mới"
                 dependencies={['newPassword']}
                 rules={[
                   { required: true, message: 'Vui lòng xác nhận mật khẩu mới' },
@@ -170,12 +125,8 @@ const handleChangePassword = async (values: any) => {
 
               <Form.Item>
                 <Space>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={loading}
-                  >
-                    {intl.formatMessage({ id: 'pages.settings.password.button' }) || 'Đổi mật khẩu'}
+                  <Button type="primary" htmlType="submit" loading={loading}>
+                    Đổi mật khẩu
                   </Button>
                   <Button
                     onClick={() => {
@@ -198,11 +149,11 @@ const handleChangePassword = async (values: any) => {
             <Space>
               <LogoutOutlined style={{ fontSize: 20, color: '#ff4d4f' }} />
               <Title level={4} style={{ margin: 0 }}>
-                {intl.formatMessage({ id: 'pages.settings.logout' }) || 'Đăng xuất'}
+                Đăng xuất
               </Title>
             </Space>
             <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
-              {intl.formatMessage({ id: 'pages.settings.logout.desc' }) || 'Đăng xuất khỏi hệ thống'}
+              Đăng xuất khỏi hệ thống
             </Text>
           </div>
 
@@ -213,7 +164,7 @@ const handleChangePassword = async (values: any) => {
             onClick={handleLogout}
             size="large"
           >
-            {intl.formatMessage({ id: 'pages.settings.logout.button' }) || 'Đăng xuất'}
+            Đăng xuất
           </Button>
         </Space>
       </Card>

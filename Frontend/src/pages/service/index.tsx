@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Modal, Form, Input, Select, message, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useIntl, useModel } from '@umijs/max';
+import { useModel } from '@umijs/max';
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
@@ -16,7 +16,6 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 export default () => {
-  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const isResident = currentUser?.role === 'RESIDENT';
@@ -61,29 +60,20 @@ export default () => {
 
   const getServiceTypeText = (type: string) => {
     const typeMap: Record<string, string> = {
-      ELECTRIC: intl.formatMessage({ id: 'pages.service.type.electric' }),
-      WATER: intl.formatMessage({ id: 'pages.service.type.water' }),
-      AIR_CONDITIONER: intl.formatMessage({ id: 'pages.service.type.ac' }),
-      INTERNET: intl.formatMessage({ id: 'pages.service.type.internet' }),
-      OTHER: intl.formatMessage({ id: 'pages.service.type.other' }),
+      ELECTRIC: 'Tiền điện',
+      WATER: 'Tiền nước',
+      AIR_CONDITIONER: 'Điều hoà',
+      INTERNET: 'Internet',
+      OTHER: 'Khác',
     };
     return typeMap[type] || type;
   };
 
   const getStatusConfig = (status: string) => {
     const statusMap: Record<string, { text: string; color: string }> = {
-      PENDING: { 
-        text: intl.formatMessage({ id: 'pages.service.status.pending' }), 
-        color: 'orange' 
-      },
-      PROCESSING: { 
-        text: intl.formatMessage({ id: 'pages.service.status.processing' }), 
-        color: 'blue' 
-      },
-      DONE: { 
-        text: intl.formatMessage({ id: 'pages.service.status.done' }), 
-        color: 'green' 
-      },
+      PENDING: { text: 'Chờ xử lý', color: 'orange' },
+      PROCESSING: { text: 'Đang xử lý', color: 'blue' },
+      DONE: { text: 'Đã hoàn thành', color: 'green' },
     };
     return statusMap[status] || { text: status, color: 'default' };
   };
@@ -101,10 +91,10 @@ export default () => {
 
     try {
       await updateService(record.id, { status: nextStatus });
-      message.success(intl.formatMessage({ id: 'pages.service.statusUpdateSuccess' }) || 'Cập nhật trạng thái thành công');
+      message.success('Cập nhật trạng thái thành công');
       actionRef.current?.reload();
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.service.statusUpdateError' }) || 'Cập nhật trạng thái thất bại');
+      message.error('Cập nhật trạng thái thất bại');
     }
   };
 
@@ -124,34 +114,34 @@ export default () => {
       render: (_, record) => record.serviceNumber || record.id,
     },
     {
-      title: intl.formatMessage({ id: 'pages.service.apartment' }),
+      title: 'Căn hộ',
       dataIndex: ['apartment', 'code'],
       width: 90,
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.service.requester' }),
+      title: 'Người yêu cầu',
       dataIndex: ['user', 'fullName'],
       width: 150,
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.service.type' }),
+      title: 'Loại dịch vụ',
       dataIndex: 'type',
       width: 100,
       valueEnum: {
-        ELECTRIC: { text: intl.formatMessage({ id: 'pages.service.type.electric' }) },
-        WATER: { text: intl.formatMessage({ id: 'pages.service.type.water' }) },
-        AIR_CONDITIONER: { text: intl.formatMessage({ id: 'pages.service.type.ac' }) },
-        INTERNET: { text: intl.formatMessage({ id: 'pages.service.type.internet' }) },
-        OTHER: { text: intl.formatMessage({ id: 'pages.service.type.other' }) },
+        ELECTRIC: { text: 'Tiền điện' },
+        WATER: { text: 'Tiền nước' },
+        AIR_CONDITIONER: { text: 'Điều hoà' },
+        INTERNET: { text: 'Internet' },
+        OTHER: { text: 'Khác' },
       },
       render: (_, record) => (
         <Tag>{getServiceTypeText(record.type)}</Tag>
       ),
     },
     {
-      title: intl.formatMessage({ id: 'pages.service.description' }),
+      title: 'Mô tả',
       dataIndex: 'description',
       search: false,
       width: 150,
@@ -160,7 +150,7 @@ export default () => {
     {
       title: (
         <Space>
-          {intl.formatMessage({ id: 'pages.service.status' })}
+          {'Trạng thái'}
           <SortIcon
             sortDirection={statusSort}
             onSort={(direction) => {
@@ -174,9 +164,9 @@ export default () => {
       dataIndex: 'status',
       width: 110,
       valueEnum: {
-        PENDING: { text: intl.formatMessage({ id: 'pages.service.status.pending' }) },
-        PROCESSING: { text: intl.formatMessage({ id: 'pages.service.status.processing' }) },
-        DONE: { text: intl.formatMessage({ id: 'pages.service.status.done' }) },
+        PENDING: { text: 'Chờ xử lý' },
+        PROCESSING: { text: 'Đang xử lý' },
+        DONE: { text: 'Đã hoàn thành' },
       },
       render: (_, record) => {
         const status = getStatusConfig(record.status);
@@ -194,7 +184,7 @@ export default () => {
     {
       title: (
         <Space>
-          {intl.formatMessage({ id: 'pages.service.createdAt' })}
+          {'Ngày tạo'}
           <SortIcon
             sortDirection={createdAtSort}
             onSort={(direction) => {
@@ -211,7 +201,7 @@ export default () => {
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.service.actions' }),
+      title: 'Hành động',
       valueType: 'option',
       width: 180,
       render: (_, record) => [
@@ -221,7 +211,7 @@ export default () => {
           icon={<EditOutlined />}
           onClick={() => handleEdit(record)}
         >
-          {intl.formatMessage({ id: 'pages.service.edit' })}
+          {'Sửa'}
         </Button>,
         <Button
           key="delete"
@@ -230,7 +220,7 @@ export default () => {
           icon={<DeleteOutlined />}
           onClick={() => handleDelete(record.id)}
         >
-          {intl.formatMessage({ id: 'pages.service.delete' })}
+          {'Xóa'}
         </Button>,
       ],
     },
@@ -271,15 +261,15 @@ export default () => {
 
   const handleDelete = async (id: string) => {
     Modal.confirm({
-      title: intl.formatMessage({ id: 'pages.service.deleteConfirm' }),
-      content: intl.formatMessage({ id: 'pages.service.deleteContent' }),
+      title: 'Xác nhận xóa',
+      content: 'Bạn có chắc chắn muốn xóa yêu cầu dịch vụ này?',
       onOk: async () => {
         try {
           await deleteService(id);
-          message.success(intl.formatMessage({ id: 'pages.service.deleteSuccess' }));
+          message.success('Xóa yêu cầu dịch vụ thành công');
           actionRef.current?.reload();
         } catch (error) {
-          message.error(intl.formatMessage({ id: 'pages.service.deleteError' }));
+          message.error('Xóa yêu cầu dịch vụ thất bại');
         }
       },
     });
@@ -296,43 +286,43 @@ export default () => {
       
       if (editingRecord) {
         await updateService(editingRecord.id, submitValues);
-        message.success(intl.formatMessage({ id: 'pages.service.updateSuccess' }));
+        message.success('Cập nhật dịch vụ thành công');
       } else {
         await createService(submitValues);
-        message.success(intl.formatMessage({ id: 'pages.service.createSuccess' }));
+        message.success('Tạo dịch vụ thành công');
       }
       setIsModalOpen(false);
       actionRef.current?.reload();
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.service.actionError' }));
+      message.error('Thao tác dịch vụ thất bại');
     }
   };
 
   const filterFields: FilterFieldDefinition[] = [
     { key: 'id', label: 'ID', type: 'text' },
-    { key: 'apartmentCode', label: intl.formatMessage({ id: 'pages.service.apartment' }), type: 'text' },
-    { key: 'requesterName', label: intl.formatMessage({ id: 'pages.service.requester' }), type: 'text' },
-    { key: 'description', label: intl.formatMessage({ id: 'pages.service.description' }), type: 'text' },
+    { key: 'apartmentCode', label: 'Căn hộ', type: 'text' },
+    { key: 'requesterName', label: 'Người yêu cầu', type: 'text' },
+    { key: 'description', label: 'Mô tả', type: 'text' },
     {
       key: 'type',
-      label: intl.formatMessage({ id: 'pages.service.type' }),
+      label: 'Loại dịch vụ',
       type: 'select',
       options: [
-        { label: intl.formatMessage({ id: 'pages.service.type.electric' }), value: 'ELECTRIC' },
-        { label: intl.formatMessage({ id: 'pages.service.type.water' }), value: 'WATER' },
-        { label: intl.formatMessage({ id: 'pages.service.type.ac' }), value: 'AIR_CONDITIONER' },
-        { label: intl.formatMessage({ id: 'pages.service.type.internet' }), value: 'INTERNET' },
-        { label: intl.formatMessage({ id: 'pages.service.type.other' }), value: 'OTHER' },
+        { label: 'Tiền điện', value: 'ELECTRIC' },
+        { label: 'Tiền nước', value: 'WATER' },
+        { label: 'Điều hoà', value: 'AIR_CONDITIONER' },
+        { label: 'Internet', value: 'INTERNET' },
+        { label: 'Khác', value: 'OTHER' },
       ],
     },
     {
       key: 'status',
-      label: intl.formatMessage({ id: 'pages.service.status' }),
+      label: 'Trạng thái',
       type: 'select',
       options: [
-        { label: intl.formatMessage({ id: 'pages.service.status.pending' }), value: 'PENDING' },
-        { label: intl.formatMessage({ id: 'pages.service.status.processing' }), value: 'PROCESSING' },
-        { label: intl.formatMessage({ id: 'pages.service.status.done' }), value: 'DONE' },
+        { label: 'Chờ xử lý', value: 'PENDING' },
+        { label: 'Đang xử lý', value: 'PROCESSING' },
+        { label: 'Đã hoàn thành', value: 'DONE' },
       ],
     },
   ];
@@ -454,7 +444,7 @@ export default () => {
   return (
     <>
       <ProTable<ServiceItem>
-        headerTitle={intl.formatMessage({ id: 'pages.service.title' })}
+        headerTitle={'Dịch vụ'}
         actionRef={actionRef}
         rowKey="id"
         search={false}
@@ -467,7 +457,7 @@ export default () => {
         toolBarRender={() => [
           <Input.Search
             key="quickSearch"
-            placeholder={intl.formatMessage({ id: 'pages.service.quickSearchPlaceholder' }) || 'Tìm kiếm ID, căn hộ, tên...'}
+            placeholder={'Tìm kiếm ID, căn hộ, tên...'}
             allowClear
             style={{ width: 320 }}
             value={quickSearch}
@@ -482,7 +472,7 @@ export default () => {
             type="default"
             onClick={() => setFilterDrawerOpen(true)}
           >
-            {intl.formatMessage({ id: 'components.advancedFilter.open' }) || 'Lọc nâng cao'}
+            {'Lọc nâng cao'}
           </Button>,
           <Button
             key="clearFilters"
@@ -490,10 +480,10 @@ export default () => {
             style={{ color: '#fa8c16', borderColor: '#fa8c16' }}
             onClick={handleClearFilters}
           >
-            {intl.formatMessage({ id: 'components.advancedFilter.clear' }) || 'Xóa bộ lọc'}
+            {'Xóa bộ lọc'}
           </Button>,
           <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            {intl.formatMessage({ id: 'pages.service.addNew' })}
+            {'Thêm mới'}
           </Button>,
         ]}
         request={async () => {
@@ -514,15 +504,13 @@ export default () => {
         onApply={handleFilterSubmit}
         onClear={handleClearFilters}
         fields={filterFields}
-        quickSearchPlaceholder={intl.formatMessage({ id: 'Thông tin tìm kiếm' }) || 'Tìm kiếm ID, căn hộ, tên...'}
+        quickSearchPlaceholder={'Tìm kiếm ID, căn hộ, tên...'}
         initialQuickSearch={quickSearch}
         initialFilters={filterRows}
       />
 
       <Modal
-        title={editingRecord 
-          ? intl.formatMessage({ id: 'pages.service.editTitle' }) 
-          : intl.formatMessage({ id: 'pages.service.addTitle' })}
+        title={editingRecord ? 'Cập nhật dịch vụ' : 'Thêm dịch vụ mới'}
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
@@ -531,12 +519,12 @@ export default () => {
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="apartmentId"
-            label={intl.formatMessage({ id: 'pages.service.apartment' })}
-            rules={[{ required: !isResident || !!editingRecord, message: intl.formatMessage({ id: 'pages.service.apartmentRequired' }) }]}
+            label={'Căn hộ'}
+            rules={[{ required: !isResident || !!editingRecord, message: 'Vui lòng chọn căn hộ' }]}
           >
             <Select
               showSearch
-              placeholder={intl.formatMessage({ id: 'pages.service.apartmentPlaceholder' })}
+              placeholder={'Chọn căn hộ'}
               optionFilterProp="label"
               disabled={isResident}
               filterOption={(input, option) =>
@@ -553,32 +541,32 @@ export default () => {
 
           <Form.Item
             name="type"
-            label={intl.formatMessage({ id: 'pages.service.type' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.service.typeRequired' }) }]}
+            label={'Loại dịch vụ'}
+            rules={[{ required: true, message: 'Vui lòng chọn loại dịch vụ' }]}
           >
-            <Select placeholder={intl.formatMessage({ id: 'pages.service.typePlaceholder' })}>
-              <Option value="ELECTRIC">{intl.formatMessage({ id: 'pages.service.type.electric' })}</Option>
-              <Option value="WATER">{intl.formatMessage({ id: 'pages.service.type.water' })}</Option>
-              <Option value="AIR_CONDITIONER">{intl.formatMessage({ id: 'pages.service.type.ac' })}</Option>
-              <Option value="INTERNET">{intl.formatMessage({ id: 'pages.service.type.internet' })}</Option>
-              <Option value="OTHER">{intl.formatMessage({ id: 'pages.service.type.other' })}</Option>
+            <Select placeholder={'Chọn loại dịch vụ'}>
+              <Option value="ELECTRIC">{'Tiền điện'}</Option>
+              <Option value="WATER">{'Tiền nước'}</Option>
+              <Option value="AIR_CONDITIONER">{'Điều hoà'}</Option>
+              <Option value="INTERNET">{'Internet'}</Option>
+              <Option value="OTHER">{'Khác'}</Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="description"
-            label={intl.formatMessage({ id: 'pages.service.description' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.service.descriptionRequired' }) }]}
+            label={'Mô tả'}
+            rules={[{ required: true, message: 'Vui lòng nhập mô tả' }]}
           >
-            <TextArea rows={4} placeholder={intl.formatMessage({ id: 'pages.service.descriptionPlaceholder' })} />
+            <TextArea rows={4} placeholder={'Nhập mô tả dịch vụ'} />
           </Form.Item>
 
           {editingRecord && !isResident && (
-            <Form.Item name="status" label={intl.formatMessage({ id: 'pages.service.status' })}>
-              <Select placeholder={intl.formatMessage({ id: 'pages.service.statusPlaceholder' })}>
-                <Option value="PENDING">{intl.formatMessage({ id: 'pages.service.status.pending' })}</Option>
-                <Option value="PROCESSING">{intl.formatMessage({ id: 'pages.service.status.processing' })}</Option>
-                <Option value="DONE">{intl.formatMessage({ id: 'pages.service.status.done' })}</Option>
+            <Form.Item name="status" label={'Trạng thái'}>
+              <Select placeholder={'Chọn trạng thái'}>
+                <Option value="PENDING">{'Chờ xử lý'}</Option>
+                <Option value="PROCESSING">{'Đang xử lý'}</Option>
+                <Option value="DONE">{'Đã hoàn thành'}</Option>
               </Select>
             </Form.Item>
           )}

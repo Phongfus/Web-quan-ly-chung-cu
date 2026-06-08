@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Modal, Form, Input, Select, message, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useIntl, useModel } from '@umijs/max';
+import { useModel } from '@umijs/max';
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
@@ -16,7 +16,6 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 export default () => {
-  const intl = useIntl();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const isResident = currentUser?.role === 'RESIDENT';
@@ -132,12 +131,12 @@ export default () => {
   const handleCreate = async (values: any) => {
     try {
       await createVehicle(values);
-      message.success(intl.formatMessage({ id: 'pages.vehicle.createSuccess' }));
+      message.success('Tạo xe thành công');
       setIsModalOpen(false);
       form.resetFields();
       actionRef.current?.reload();
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.vehicle.actionError' }));
+      message.error('Thao tác xe thất bại');
     }
   };
 
@@ -145,27 +144,27 @@ export default () => {
     if (!editingRecord) return;
     try {
       await updateVehicle(editingRecord.id, values);
-      message.success(intl.formatMessage({ id: 'pages.vehicle.updateSuccess' }));
+      message.success('Cập nhật xe thành công');
       setIsModalOpen(false);
       setEditingRecord(null);
       form.resetFields();
       actionRef.current?.reload();
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.vehicle.actionError' }));
+      message.error('Thao tác xe thất bại');
     }
   };
 
   const handleDelete = async (record: VehicleItem) => {
     Modal.confirm({
-      title: intl.formatMessage({ id: 'pages.vehicle.deleteConfirm' }),
-      content: intl.formatMessage({ id: 'pages.vehicle.deleteContent' }),
+      title: 'Xác nhận xóa',
+      content: 'Bạn có chắc chắn muốn xóa xe này?',
       onOk: async () => {
         try {
           await deleteVehicle(record.id);
-          message.success(intl.formatMessage({ id: 'pages.vehicle.deleteSuccess' }));
+          message.success('Xóa xe thành công');
           actionRef.current?.reload();
         } catch (error) {
-          message.error(intl.formatMessage({ id: 'pages.vehicle.deleteError' }));
+          message.error('Xóa xe thất bại');
         }
       },
     });
@@ -228,7 +227,7 @@ export default () => {
 
   const columns: ProColumns<VehicleItem>[] = [
     {
-      title: intl.formatMessage({ id: 'pages.common.index' }),
+      title: 'STT',
       dataIndex: 'index',
       valueType: 'index',
       width: 60,
@@ -242,7 +241,7 @@ export default () => {
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.vehicle.type' }),
+      title: 'Loại xe',
       dataIndex: 'type',
       key: 'type',
       width: 120,
@@ -250,28 +249,28 @@ export default () => {
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.vehicle.licensePlate' }),
+      title: 'Biển số',
       dataIndex: 'licensePlate',
       key: 'licensePlate',
       width: 120,
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.vehicle.apartment' }),
+      title: 'Căn hộ',
       dataIndex: ['apartment', 'code'],
       key: 'apartment',
       width: 100,
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.vehicle.owner' }),
+      title: 'Chủ xe',
       dataIndex: ['owner', 'user', 'fullName'],
       key: 'owner',
       width: 150,
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.vehicle.createdAt' }),
+      title: 'Ngày đăng ký',
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 120,
@@ -279,7 +278,7 @@ export default () => {
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.vehicle.actions' }),
+      title: 'Hành động',
       key: 'action',
       width: 130,
       search: false,
@@ -293,7 +292,7 @@ export default () => {
               icon={<EditOutlined />}
               onClick={() => handleEdit(record)}
             >
-              {intl.formatMessage({ id: 'pages.vehicle.edit' })}
+              {'Sửa'}
             </Button>
             <Button
               type="link"
@@ -301,7 +300,7 @@ export default () => {
               icon={<DeleteOutlined />}
               onClick={() => handleDelete(record)}
             >
-              {intl.formatMessage({ id: 'pages.vehicle.delete' })}
+              {'Xóa'}
             </Button>
           </Space>
         );
@@ -312,7 +311,7 @@ export default () => {
   const filterFields: FilterFieldDefinition[] = [
     {
       key: 'type',
-      label: intl.formatMessage({ id: 'pages.vehicle.type' }),
+      label: 'Loại xe',
       type: 'select',
       options: Object.entries(vehicleTypeMap).map(([key, value]) => ({
         label: value,
@@ -321,7 +320,7 @@ export default () => {
     },
     {
       key: 'apartmentId',
-      label: intl.formatMessage({ id: 'pages.vehicle.apartment' }),
+      label: 'Căn hộ',
       type: 'select',
       options: apartments.map(a => ({
         label: a.code,
@@ -330,7 +329,7 @@ export default () => {
     },
     {
       key: 'ownerId',
-      label: intl.formatMessage({ id: 'pages.vehicle.owner' }),
+      label: 'Chủ xe',
       type: 'select',
       options: residents.map(r => ({
         label: r.user?.fullName || '',
@@ -339,7 +338,7 @@ export default () => {
     },
     {
       key: 'licensePlate',
-      label: intl.formatMessage({ id: 'pages.vehicle.licensePlate' }),
+      label: 'Biển số',
       type: 'text',
     },
   ];
@@ -347,7 +346,7 @@ export default () => {
   return (
     <>
       <ProTable<VehicleItem>
-        headerTitle={intl.formatMessage({ id: 'pages.vehicle.title' })}
+        headerTitle={'Xe'}
         actionRef={actionRef}
         rowKey="id"
         search={false}
@@ -361,7 +360,7 @@ export default () => {
           const toolbarItems = [
             <Input.Search
               key="search"
-              placeholder={intl.formatMessage({ id: 'pages.vehicle.quickSearchPlaceholder' })}
+              placeholder={'Tìm kiếm căn hộ, chủ xe, biển số...'}
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               onSearch={handleExternalSearch}
@@ -369,10 +368,10 @@ export default () => {
               allowClear
             />,
             <Button key="filter" type="default" onClick={() => setFilterDrawerOpen(true)}>
-              {intl.formatMessage({ id: 'components.advancedFilter.open' })}
+              {'Lọc nâng cao'}
             </Button>,
             <Button key="clearFilters" type="default" style={{ color: '#fa8c16', borderColor: '#fa8c16' }} onClick={handleClearFilters}>
-              {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
+              {'Xóa bộ lọc'}
             </Button>,
           ];
 
@@ -384,7 +383,7 @@ export default () => {
                 onClick={handleAdd}
                 type="primary"
               >
-                {intl.formatMessage({ id: 'pages.vehicle.addNew' })}
+                {'Thêm mới'}
               </Button>,
             );
           }
@@ -411,9 +410,7 @@ export default () => {
       />
 
       <Modal
-        title={editingRecord
-          ? intl.formatMessage({ id: 'pages.vehicle.editTitle' })
-          : intl.formatMessage({ id: 'pages.vehicle.addTitle' })}
+        title={editingRecord ? 'Cập nhật xe' : 'Thêm xe mới'}
         open={isModalOpen}
         onCancel={handleCancel}
         onOk={() => form.submit()}
@@ -427,10 +424,10 @@ export default () => {
         >
           <Form.Item
             name="type"
-            label={intl.formatMessage({ id: 'pages.vehicle.type' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.vehicle.typeRequired' }) }]}
+            label={'Loại xe'}
+            rules={[{ required: true, message: 'Vui lòng chọn loại xe' }]}
           >
-            <Select placeholder={intl.formatMessage({ id: 'pages.vehicle.typePlaceholder' })}>
+            <Select placeholder={'Chọn loại xe'}>
               {Object.entries(vehicleTypeMap).map(([key, value]) => (
                 <Option key={key} value={key}>
                   {value}
@@ -440,18 +437,18 @@ export default () => {
           </Form.Item>
           <Form.Item
             name="licensePlate"
-            label={intl.formatMessage({ id: 'pages.vehicle.licensePlate' })}
+            label={'Biển số'}
           >
-            <Input placeholder={intl.formatMessage({ id: 'pages.vehicle.licensePlatePlaceholder' })} />
+            <Input placeholder={'Nhập biển số'} />
           </Form.Item>
           <Form.Item
             name="apartmentId"
-            label={intl.formatMessage({ id: 'pages.vehicle.apartment' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.vehicle.apartmentRequired' }) }]}
+            label={'Căn hộ'}
+            rules={[{ required: true, message: 'Vui lòng chọn căn hộ' }]}
           >
             <Select
               showSearch
-              placeholder={intl.formatMessage({ id: 'pages.vehicle.apartmentPlaceholder' })}
+              placeholder={'Chọn căn hộ'}
               optionFilterProp="label"
               filterOption={(input, option) =>
                 option?.label
@@ -466,11 +463,11 @@ export default () => {
           </Form.Item>
           <Form.Item
             name="ownerId"
-            label={intl.formatMessage({ id: 'pages.vehicle.owner' })}
+            label={'Chủ xe'}
           >
             <Select
               showSearch
-              placeholder={intl.formatMessage({ id: 'pages.vehicle.ownerPlaceholder' })}
+              placeholder={'Chọn chủ xe'}
               optionFilterProp="label"
               filterOption={(input, option) =>
                 option?.label
@@ -493,7 +490,7 @@ export default () => {
         onApply={handleFilterSubmit}
         onClear={handleClearFilters}
         fields={filterFields}
-        quickSearchPlaceholder={intl.formatMessage({ id: 'pages.vehicle.quickSearchPlaceholder' })}
+        quickSearchPlaceholder={'Tìm kiếm căn hộ, chủ xe, biển số...'}
         initialQuickSearch={quickSearch}
         initialFilters={filterRows}
       />

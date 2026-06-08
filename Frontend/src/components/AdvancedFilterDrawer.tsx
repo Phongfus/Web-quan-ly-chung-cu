@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Drawer, Input, InputNumber, Select, Space } from 'antd';
 import { CloseCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
 
 export type FilterFieldType = 'text' | 'number' | 'select';
 
@@ -47,24 +46,24 @@ export interface AdvancedFilterDrawerProps {
   initialFilters?: FilterRowItem[];
 }
 
-const getDefaultTextOperators = (intl: any): FilterOperator[] => [
-  { value: 'eq', label: intl.formatMessage({ id: 'components.advancedFilter.operator.eq' }) },
-  { value: 'ne', label: intl.formatMessage({ id: 'components.advancedFilter.operator.ne' }) },
-  { value: 'contains', label: intl.formatMessage({ id: 'components.advancedFilter.operator.contains' }) },
-  { value: 'notContains', label: intl.formatMessage({ id: 'components.advancedFilter.operator.notContains' }) },
-  { value: 'isEmpty', label: intl.formatMessage({ id: 'components.advancedFilter.operator.isEmpty' }) },
-  { value: 'isNotEmpty', label: intl.formatMessage({ id: 'components.advancedFilter.operator.isNotEmpty' }) },
+const getDefaultTextOperators = (): FilterOperator[] => [
+  { value: 'eq', label: 'Bằng' },
+  { value: 'ne', label: 'Không bằng' },
+  { value: 'contains', label: 'Chứa' },
+  { value: 'notContains', label: 'Không chứa' },
+  { value: 'isEmpty', label: 'Rỗng' },
+  { value: 'isNotEmpty', label: 'Không rỗng' },
 ];
 
-const getDefaultNumberOperators = (intl: any): FilterOperator[] => [
-  { value: 'eq', label: intl.formatMessage({ id: 'components.advancedFilter.operator.eq' }) },
-  { value: 'ne', label: intl.formatMessage({ id: 'components.advancedFilter.operator.ne' }) },
-  { value: 'gt', label: intl.formatMessage({ id: 'components.advancedFilter.operator.gt' }) },
-  { value: 'lt', label: intl.formatMessage({ id: 'components.advancedFilter.operator.lt' }) },
-  { value: 'gte', label: intl.formatMessage({ id: 'components.advancedFilter.operator.gte' }) },
-  { value: 'lte', label: intl.formatMessage({ id: 'components.advancedFilter.operator.lte' }) },
-  { value: 'isEmpty', label: intl.formatMessage({ id: 'components.advancedFilter.operator.isEmpty' }) },
-  { value: 'isNotEmpty', label: intl.formatMessage({ id: 'components.advancedFilter.operator.isNotEmpty' }) },
+const getDefaultNumberOperators = (): FilterOperator[] => [
+  { value: 'eq', label: 'Bằng' },
+  { value: 'ne', label: 'Không bằng' },
+  { value: 'gt', label: 'Lớn hơn' },
+  { value: 'lt', label: 'Nhỏ hơn' },
+  { value: 'gte', label: 'Lớn hơn hoặc bằng' },
+  { value: 'lte', label: 'Nhỏ hơn hoặc bằng' },
+  { value: 'isEmpty', label: 'Rỗng' },
+  { value: 'isNotEmpty', label: 'Không rỗng' },
 ];
 
 const filterKeyToField = (fields: FilterFieldDefinition[], fieldKey: string) =>
@@ -82,11 +81,11 @@ const createEmptyRow = (fields: FilterFieldDefinition[]): FilterRowItem => {
 
 const operatorNeedsValue = (operator: string) => operator !== 'isEmpty' && operator !== 'isNotEmpty';
 
-const getOperatorsForField = (field: FilterFieldDefinition, intl: any): FilterOperator[] => {
+const getOperatorsForField = (field: FilterFieldDefinition): FilterOperator[] => {
   if (field.operators) {
     return field.operators;
   }
-  return field.type === 'number' ? getDefaultNumberOperators(intl) : getDefaultTextOperators(intl);
+  return field.type === 'number' ? getDefaultNumberOperators() : getDefaultTextOperators();
 };
 
 export default function AdvancedFilterDrawer({
@@ -100,13 +99,12 @@ export default function AdvancedFilterDrawer({
   initialQuickSearch = '',
   initialFilters = [],
 }: AdvancedFilterDrawerProps) {
-  const intl = useIntl();
-  const drawerTitle = title || intl.formatMessage({ id: 'components.advancedFilter.title' });
-  const searchPlaceholder = quickSearchPlaceholder || intl.formatMessage({ id: 'components.advancedFilter.quickSearchPlaceholder' });
-  const valuePlaceholder = intl.formatMessage({ id: 'components.advancedFilter.valuePlaceholder' });
-  const addConditionLabel = intl.formatMessage({ id: 'components.advancedFilter.addCondition' });
-  const clearFiltersLabel = intl.formatMessage({ id: 'components.advancedFilter.clearFilters' });
-  const applyLabel = intl.formatMessage({ id: 'components.advancedFilter.apply' });
+  const drawerTitle = title || 'Bộ lọc nâng cao';
+  const searchPlaceholder = quickSearchPlaceholder || 'Tìm kiếm nhanh';
+  const valuePlaceholder = 'Giá trị';
+  const addConditionLabel = 'Thêm điều kiện lọc';
+  const clearFiltersLabel = 'Xóa bộ lọc';
+  const applyLabel = 'Áp dụng';
 
   const [quickSearch, setQuickSearch] = useState(initialQuickSearch);
   const [rows, setRows] = useState<FilterRowItem[]>(
@@ -188,7 +186,7 @@ export default function AdvancedFilterDrawer({
 
         {rows.map((row) => {
           const field = fieldMap.get(row.field) || fields[0];
-          const operators = getOperatorsForField(field, intl);
+          const operators = getOperatorsForField(field);
           const showValue = operatorNeedsValue(row.operator);
 
           return (

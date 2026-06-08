@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Modal, Form, Input, DatePicker, InputNumber, message, Table, Space, Select, Radio, Card, Divider } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DollarOutlined, FileTextOutlined, BankOutlined, CreditCardOutlined, WalletOutlined, CheckOutlined, FileExcelOutlined } from '@ant-design/icons';
-import { useIntl, useAccess } from '@umijs/max';
+import { useAccess } from '@umijs/max';
 import qrBankImage from '@/assets/qr-bank.jpg';
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
@@ -23,7 +23,6 @@ import * as XLSX from 'xlsx';
  */
 export default () => {
   // Hook để quản lý trạng thái component
-  const intl = useIntl(); // Hook để đa ngôn ngữ
   const access = useAccess(); // Hook để kiểm tra quyền truy cập
   const actionRef = useRef<ActionType>(null); // Ref cho ProTable để reload dữ liệu
   const billPreviewRef = useRef<HTMLDivElement>(null); // Ref cho preview hóa đơn khi xuất PDF
@@ -59,7 +58,7 @@ export default () => {
       const data = await getApartments();
       setApartments(data);
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.bill.loadApartmentsError' }));
+      message.error('Không thể tải danh sách căn hộ');
     }
   };
   useEffect(() => {
@@ -78,12 +77,12 @@ export default () => {
     if (!paymentRecord) return;
 
     try {
-      if (values.paymentMethod === 'CASH') {
+        if (values.paymentMethod === 'CASH') {
         await updateBill(paymentRecord.id, {
           paymentMethod: 'CASH',
           notes: values.notes
         });
-        message.info(intl.formatMessage({ id: 'pages.bill.cashPaymentWaiting' }) || 'Thanh toán tiền mặt đã được ghi nhận. Đang chờ admin xác nhận.');
+        message.info('Thanh toán tiền mặt đã được ghi nhận. Đang chờ admin xác nhận.');
         setPaymentModalOpen(false);
         actionRef.current?.reload();
       } else if (values.paymentMethod === 'BANK_TRANSFER') {
@@ -91,12 +90,12 @@ export default () => {
           paymentMethod: 'BANK_TRANSFER',
           notes: values.notes
         });
-        message.info(intl.formatMessage({ id: 'pages.bill.bankTransferMessage' }));
+        message.info('Chuyển khoản ngân hàng đã được ghi nhận.');
         setPaymentModalOpen(false);
         actionRef.current?.reload();
       }
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.bill.paymentError' }) || 'Thanh toán thất bại');
+      message.error('Thanh toán thất bại');
     }
   };
 
@@ -106,10 +105,10 @@ export default () => {
       await updateBill(record.id, {
         status: 'PAID',
       });
-      message.success(intl.formatMessage({ id: 'pages.bill.confirmBillSuccess' }) || 'Xác nhận thanh toán thành công');
+      message.success('Xác nhận thanh toán thành công');
       actionRef.current?.reload();
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.bill.confirmBillError' }) || 'Xác nhận thất bại');
+      message.error('Xác nhận thất bại');
     }
   };
 
@@ -149,17 +148,17 @@ export default () => {
       }
 
       pdf.save(`${exportRecord.id}.pdf`);
-      message.success(intl.formatMessage({ id: 'pages.bill.exportSuccess' }) || 'Xuất hóa đơn thành công');
+      message.success('Xuất hóa đơn thành công');
       setExportModalOpen(false);
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.bill.exportError' }) || 'Xuất hóa đơn thất bại');
+      message.error('Xuất hóa đơn thất bại');
     }
   };
 
   // Định nghĩa các cột của bảng hóa đơn
   const columns: ProColumns<BillItem>[] = [
     {
-      title: intl.formatMessage({ id: 'pages.common.index' }),
+      title: 'STT',
       dataIndex: 'index',
       valueType: 'index',
       width: 60,
@@ -172,7 +171,7 @@ export default () => {
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.bill.apartment' }),
+      title: 'Căn hộ',
       dataIndex: ['apartment', 'code'],
       width: 100,
       search: false,
@@ -180,7 +179,7 @@ export default () => {
     {
       title: (
         <Space>
-          {intl.formatMessage({ id: 'pages.bill.monthYear' })}
+          {'Tháng/Năm'}
           {/* Icon sắp xếp theo tháng/năm */}
           <SortIcon
             sortDirection={monthYearSort}
@@ -204,7 +203,7 @@ export default () => {
     {
       title: (
         <Space>
-          {intl.formatMessage({ id: 'pages.bill.electricityFee' })}
+          {'Tiền điện (VND)'}
           <SortIcon
             sortDirection={electricityFeeSort}
             onSort={(direction) => {
@@ -226,7 +225,7 @@ export default () => {
     {
       title: (
         <Space>
-          {intl.formatMessage({ id: 'pages.bill.waterFee' })}
+          {'Tiền nước (VND)'}
           <SortIcon
             sortDirection={waterFeeSort}
             onSort={(direction) => {
@@ -248,7 +247,7 @@ export default () => {
     {
       title: (
         <Space>
-          {intl.formatMessage({ id: 'pages.bill.serviceFee' })}
+          {'Phí dịch vụ (VND)'}
           <SortIcon
             sortDirection={serviceFeeSort}
             onSort={(direction) => {
@@ -270,7 +269,7 @@ export default () => {
     {
       title: (
         <Space>
-          {intl.formatMessage({ id: 'pages.bill.totalAmount' })}
+          {'Tổng tiền (VND)'}
           <SortIcon
             sortDirection={totalAmountSort}
             onSort={(direction) => {
@@ -290,7 +289,7 @@ export default () => {
       render: (_, record) => <strong>{record.amount?.toLocaleString('vi-VN')} </strong>,
     },
     {
-      title: intl.formatMessage({ id: 'pages.bill.dueDate' }),
+      title: 'Hạn thanh toán',
       // Cột hiển thị ngày đến hạn
       dataIndex: 'dueDate',
       width: 110,
@@ -298,40 +297,40 @@ export default () => {
       search: false,
     },
     {
-      title: intl.formatMessage({ id: 'pages.bill.status' }),
+      title: 'Trạng thái',
       // Cột hiển thị trạng thái hóa đơn với tag màu sắc
       dataIndex: 'status',
       width: 120,
       valueEnum: {
-        UNPAID: { text: intl.formatMessage({ id: 'pages.bill.status.unpaid' }) },
-        WAITING_CONFIRMATION: { text: intl.formatMessage({ id: 'pages.bill.status.waitingConfirmation' }) },
-        PAID: { text: intl.formatMessage({ id: 'pages.bill.status.paid' }) },
-        UPCOMING_OVERDUE: { text: intl.formatMessage({ id: 'pages.bill.status.upcomingOverdue' })},
-        OVERDUE: { text: intl.formatMessage({ id: 'pages.bill.status.overdue' })},
+        UNPAID: { text: 'Chưa thanh toán' },
+        WAITING_CONFIRMATION: { text: 'Chờ xác nhận' },
+        PAID: { text: 'Đã thanh toán' },
+        UPCOMING_OVERDUE: { text: 'Sắp quá hạn' },
+        OVERDUE: { text: 'Quá hạn' },
       },
       render: (_, record) => {
         if (record.status === 'PAID') {
-          return <Tag color="green">{intl.formatMessage({ id: 'pages.bill.status.paid' })}</Tag>;
+          return <Tag color="green">{'Đã thanh toán'}</Tag>;
         } else if (record.status === 'WAITING_CONFIRMATION') {
-          return <Tag color="orange">{intl.formatMessage({ id: 'pages.bill.status.waitingConfirmation' })}</Tag>;
+          return <Tag color="orange">{'Chờ xác nhận'}</Tag>;
         } else if (record.status === 'OVERDUE') {
-          return <Tag color="red">{intl.formatMessage({ id: 'pages.bill.status.overdue' })}</Tag>;
+          return <Tag color="red">{'Quá hạn'}</Tag>;
         } else if (record.status === 'UPCOMING_OVERDUE') {
-          return <Tag color="gold">{intl.formatMessage({ id: 'pages.bill.status.upcomingOverdue' })}</Tag>;
+          return <Tag color="gold">{'Sắp quá hạn'}</Tag>;
         } else {
-          return <Tag color="blue">{intl.formatMessage({ id: 'pages.bill.status.unpaid' })}</Tag>;
+          return <Tag color="blue">{'Chưa thanh toán'}</Tag>;
         }
       },
     },
     {
-      title: intl.formatMessage({ id: 'pages.bill.actions' }),
+      title: 'Thao tác',
       valueType: 'option',
       width: 130,
       render: (_, record) => {
         // Render các button hành động theo quyền và trạng thái hóa đơn
         console.log('Rendering actions for access.isResident:', access.isResident, 'record status:', record.status);
         if (access.isResident === true) {
-          const canPayment = ['UNPAID', 'OVERDUE', 'UPCOMING_OVERDUE'].includes(record.status);
+            const canPayment = ['UNPAID', 'OVERDUE', 'UPCOMING_OVERDUE'].includes(record.status);
           const canExport = record.status === 'PAID';
           return [
             canPayment && (
@@ -341,7 +340,7 @@ export default () => {
                 icon={<DollarOutlined />}
                 onClick={() => handlePayment(record)}
               >
-                {intl.formatMessage({ id: 'pages.bill.payment' }) || 'Thanh toán'}
+                {'Thanh toán'}
               </Button>
             ),
             canExport && (
@@ -352,12 +351,12 @@ export default () => {
                 onClick={() => handleExport(record)}
                 style={{ backgroundColor: 'orange', borderColor: 'orange', color: 'white' }}
               >
-                {intl.formatMessage({ id: 'pages.bill.export' }) || 'Xuất'}
+                {'Xuất'}
               </Button>
             ),
           ];
         } else {
-          const canEdit = record.status !== 'PAID';
+            const canEdit = record.status !== 'PAID';
           const canDelete = record.status !== 'PAID';
           const canExport = record.status === 'PAID';
           const canConfirm = record.status === 'WAITING_CONFIRMATION';
@@ -369,7 +368,7 @@ export default () => {
                 icon={<EditOutlined />}
                 onClick={() => handleEdit(record)}
               >
-                {intl.formatMessage({ id: 'pages.bill.edit' })}
+                {'Sửa'}
               </Button>
             ),
             canDelete && (
@@ -380,7 +379,7 @@ export default () => {
                 icon={<DeleteOutlined />}
                 onClick={() => handleDelete(record.id)}
               >
-                {intl.formatMessage({ id: 'pages.bill.delete' })}
+                {'Xóa'}
               </Button>
             ),
             canConfirm && (
@@ -390,7 +389,7 @@ export default () => {
                 icon={<CheckOutlined />}
                 onClick={() => handleConfirmBill(record)}
               >
-                {intl.formatMessage({ id: 'pages.bill.confirmBill' }) || 'Xác nhận'}
+                {'Xác nhận'}
               </Button>
             ),
             canExport && (
@@ -401,7 +400,7 @@ export default () => {
                 onClick={() => handleExport(record)}
                 style={{ color: 'orange' }}
               >
-                {intl.formatMessage({ id: 'pages.bill.export' }) || 'Xuất'}
+                {'Xuất'}
               </Button>
             ),
           ];
@@ -442,15 +441,15 @@ export default () => {
   // Hàm xóa hóa đơn
   const handleDelete = async (id: string) => {
     Modal.confirm({
-      title: intl.formatMessage({ id: 'pages.bill.deleteConfirm' }),
-      content: intl.formatMessage({ id: 'pages.bill.deleteContent' }),
+      title: 'Xác nhận xóa',
+      content: 'Bạn có chắc muốn xóa hóa đơn này?',
       onOk: async () => {
         try {
           await deleteBill(id);
-          message.success(intl.formatMessage({ id: 'pages.bill.deleteSuccess' }));
+          message.success('Đã xóa thành công');
           actionRef.current?.reload();
         } catch (error) {
-          message.error(intl.formatMessage({ id: 'pages.bill.deleteError' }));
+          message.error('Xóa thất bại');
         }
       },
     });
@@ -471,39 +470,39 @@ export default () => {
 
       if (editingRecord) {
         await updateBill(editingRecord.id, data);
-        message.success(intl.formatMessage({ id: 'pages.bill.updateSuccess' }));
+        message.success('Cập nhật thành công');
       } else {
         await createBill(data);
-        message.success(intl.formatMessage({ id: 'pages.bill.createSuccess' }));
+        message.success('Tạo mới thành công');
       }
       setIsModalOpen(false);
       actionRef.current?.reload();
     } catch (error) {
-      message.error(intl.formatMessage({ id: 'pages.bill.actionError' }));
+      message.error('Thao tác thất bại');
     }
   };
 
   // Định nghĩa các trường lọc nâng cao
   const filterFields: FilterFieldDefinition[] = [
     { key: 'id', label: 'ID', type: 'text' },
-    { key: 'apartmentCode', label: intl.formatMessage({ id: 'pages.bill.apartment' }), type: 'text' },
-    { key: 'month', label: intl.formatMessage({ id: 'pages.bill.month' }), type: 'number' },
-    { key: 'year', label: intl.formatMessage({ id: 'pages.bill.year' }), type: 'number' },
-    { key: 'electricityFee', label: intl.formatMessage({ id: 'pages.bill.electricityFee' }), type: 'number' },
-    { key: 'waterFee', label: intl.formatMessage({ id: 'pages.bill.waterFee' }), type: 'number' },
-    { key: 'serviceFee', label: intl.formatMessage({ id: 'pages.bill.serviceFee' }), type: 'number' },
-    { key: 'amount', label: intl.formatMessage({ id: 'pages.bill.totalAmount' }), type: 'number' },
-    { key: 'dueDate', label: intl.formatMessage({ id: 'pages.bill.dueDate' }), type: 'text' },
+    { key: 'apartmentCode', label: 'Căn hộ', type: 'text' },
+    { key: 'month', label: 'Tháng', type: 'number' },
+    { key: 'year', label: 'Năm', type: 'number' },
+    { key: 'electricityFee', label: 'Tiền điện (VND)', type: 'number' },
+    { key: 'waterFee', label: 'Tiền nước (VND)', type: 'number' },
+    { key: 'serviceFee', label: 'Phí dịch vụ (VND)', type: 'number' },
+    { key: 'amount', label: 'Tổng tiền (VND)', type: 'number' },
+    { key: 'dueDate', label: 'Hạn thanh toán', type: 'text' },
     {
       key: 'status',
-      label: intl.formatMessage({ id: 'pages.bill.status' }),
+      label: 'Trạng thái',
       type: 'select',
       options: [
-        { label: intl.formatMessage({ id: 'pages.bill.status.paid' }), value: 'PAID' },
-        { label: intl.formatMessage({ id: 'pages.bill.status.unpaid' }), value: 'UNPAID' },
-        { label: intl.formatMessage({ id: 'pages.bill.status.waitingConfirmation' }), value: 'WAITING_CONFIRMATION' },
-        {label: intl.formatMessage({id: 'pages.bill.status.upcomingOverdue'}),value: 'UPCOMING_OVERDUE'},
-        {label: intl.formatMessage({id: 'pages.bill.status.overdue'}),value: 'OVERDUE'},
+        { label: 'Đã thanh toán', value: 'PAID' },
+        { label: 'Chưa thanh toán', value: 'UNPAID' },
+        { label: 'Chờ xác nhận', value: 'WAITING_CONFIRMATION' },
+        { label: 'Sắp quá hạn', value: 'UPCOMING_OVERDUE' },
+        { label: 'Quá hạn', value: 'OVERDUE' },
       ],
     },
   ];
@@ -553,7 +552,7 @@ export default () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Hóa đơn');
     XLSX.writeFile(wb, 'hoa_don.xlsx');
-    message.success(intl.formatMessage({ id: 'pages.bill.exportExcelSuccess' }) || 'Xuất Excel thành công');
+    message.success('Xuất Excel thành công');
   };
 
   // Hàm xử lý tìm kiếm nhanh
@@ -672,7 +671,7 @@ export default () => {
     <>
       {/* Bảng chính hiển thị danh sách hóa đơn */}
       <ProTable<BillItem>
-        headerTitle={intl.formatMessage({ id: 'pages.bill.title' })}
+        headerTitle={'Quản lý hóa đơn'}
         actionRef={actionRef}
         rowKey="id"
         search={false}
@@ -686,7 +685,7 @@ export default () => {
           // Ô tìm kiếm nhanh
           <Input.Search
             key="search"
-            placeholder={intl.formatMessage({ id: 'pages.bill.quickSearchPlaceholder' })}
+            placeholder={'Tìm kiếm ID hoặc mã căn'}
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             onSearch={handleExternalSearch}
@@ -695,11 +694,11 @@ export default () => {
           />,
           // Nút lọc nâng cao
           <Button key="filter" type="default" onClick={() => setFilterDrawerOpen(true)}>
-            {intl.formatMessage({ id: 'components.advancedFilter.open' })}
+            {'Bộ lọc nâng cao'}
           </Button>,
           // Nút xóa bộ lọc
           <Button key="clearFilters" type="default" style={{ color: '#fa8c16', borderColor: '#fa8c16' }} onClick={handleClearFilters}>
-            {intl.formatMessage({ id: 'components.advancedFilter.clear' })}
+            {'Xóa bộ lọc'}
           </Button>,
           // Nút xuất Excel
           <Button
@@ -709,14 +708,14 @@ export default () => {
             onClick={handleExportExcel}
             style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: '#fff' }}
           >
-            {intl.formatMessage({ id: 'pages.bill.exportExcel' }) || 'Xuất Excel'}
+            {'Xuất Excel'}
           </Button>,
           // Nút thêm hóa đơn mới (chỉ admin)
           ...(access.isResident
             ? []
             : [
                 <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                  {intl.formatMessage({ id: 'pages.bill.addNew' })}
+                  {'Thêm mới'}
                 </Button>,
               ]),
         ]}
@@ -740,7 +739,7 @@ export default () => {
           return (
             <Table.Summary.Row style={{ fontWeight: 'bold', backgroundColor: '#f5f5f5', position: 'sticky', bottom: 0, zIndex: 1 }}>
               <Table.Summary.Cell index={0} colSpan={4}>
-              {intl.formatMessage({ id: 'pages.common.total' })}
+              {'Tổng'}
             </Table.Summary.Cell>
               <Table.Summary.Cell index={4}>
                 {totalElectricityFee > 0 ? `${totalElectricityFee.toLocaleString('vi-VN')} ` : '-'}
@@ -767,22 +766,22 @@ export default () => {
         onApply={handleFilterSubmit}
         onClear={handleClearFilters}
         fields={filterFields}
-        quickSearchPlaceholder={intl.formatMessage({ id: 'pages.bill.quickSearchPlaceholder' })}
+        quickSearchPlaceholder={'Tìm kiếm ID hoặc mã căn'}
         initialQuickSearch={quickSearch}
         initialFilters={filterRows}
       />
 
       {/* Modal xuất hóa đơn PDF */}
       <Modal
-        title={intl.formatMessage({ id: 'pages.bill.exportModalTitle' }) || 'Xem trước hóa đơn'}
+        title={'Xem trước hóa đơn'}
         open={exportModalOpen}
         onCancel={() => setExportModalOpen(false)}
         footer={[
           <Button key="cancel" onClick={() => setExportModalOpen(false)}>
-            {intl.formatMessage({ id: 'pages.common.cancel' }) || 'Hủy'}
+            {'Hủy'}
           </Button>,
           <Button key="confirm" type="primary" onClick={handleConfirmExport}>
-            {intl.formatMessage({ id: 'pages.bill.confirmExport' }) || 'Xác nhận xuất'}
+            {'Xác nhận xuất'}
           </Button>,
         ]}
         width={600}
@@ -876,9 +875,7 @@ export default () => {
 
       {/* Modal thêm/sửa hóa đơn */}
       <Modal
-        title={editingRecord 
-          ? intl.formatMessage({ id: 'pages.bill.editTitle' }) 
-          : intl.formatMessage({ id: 'pages.bill.addTitle' })}
+        title={editingRecord ? 'Cập nhật hóa đơn' : 'Thêm hóa đơn mới'}
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
@@ -888,12 +885,12 @@ export default () => {
           {/* Chọn căn hộ */}
           <Form.Item
             name="apartmentId"
-            label={intl.formatMessage({ id: 'pages.bill.apartment' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.bill.apartmentRequired' }) }]}
+            label={'Căn hộ'}
+            rules={[{ required: true, message: 'Vui lòng chọn căn hộ' }]}
           >
             <Select
               showSearch
-              placeholder={intl.formatMessage({ id: 'pages.bill.apartmentPlaceholder' })}
+              placeholder={'Chọn căn hộ'}
               optionFilterProp="label"
               filterOption={(input, option) =>
                 option?.label
@@ -909,73 +906,64 @@ export default () => {
           {/* Chọn tháng/năm */}
           <Form.Item
             name="monthYear"
-            label={intl.formatMessage({ id: 'pages.bill.monthYear' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.bill.monthYearRequired' }) }]}
+            label={'Tháng/Năm'}
+            rules={[{ required: true, message: 'Vui lòng chọn tháng và năm' }]}
           >
             <DatePicker
               picker="month"
               style={{ width: '100%' }}
-              placeholder={intl.formatMessage({ id: 'pages.bill.monthYearPlaceholder' })}
+              placeholder={'Chọn tháng/năm'}
               format="MM/YYYY"
             />
           </Form.Item>
           {/* Nhập tiền điện */}
           <Form.Item
             name="electricityFee"
-            label={intl.formatMessage({ id: 'pages.bill.electricityFee' })}
+            label={'Tiền điện (VND)'}
           >
-            <InputNumber style={{ width: '100%' }} placeholder={intl.formatMessage({ id: 'pages.bill.electricityFeePlaceholder' })} />
+            <InputNumber style={{ width: '100%' }} placeholder={'Nhập tiền điện'} />
           </Form.Item>
           {/* Nhập tiền nước */}
           <Form.Item
             name="waterFee"
-            label={intl.formatMessage({ id: 'pages.bill.waterFee' })}
+            label={'Tiền nước (VND)'}
           >
-            <InputNumber style={{ width: '100%' }} placeholder={intl.formatMessage({ id: 'pages.bill.waterFeePlaceholder' })} />
+            <InputNumber style={{ width: '100%' }} placeholder={'Nhập tiền nước'} />
           </Form.Item>
           {/* Nhập phí dịch vụ */}
           <Form.Item
             name="serviceFee"
-            label={intl.formatMessage({ id: 'pages.bill.serviceFee' })}
+            label={'Phí dịch vụ (VND)'}
           >
-            <InputNumber style={{ width: '100%' }} placeholder={intl.formatMessage({ id: 'pages.bill.serviceFeePlaceholder' })} />
+            <InputNumber style={{ width: '100%' }} placeholder={'Nhập phí dịch vụ'} />
           </Form.Item>
           {/* Hiển thị tổng tiền (tự động tính) */}
           <Form.Item
             name="amount"
-            label={intl.formatMessage({ id: 'pages.bill.totalAmount' })}
+            label={'Tổng tiền (VND)'}
           >
-            <InputNumber style={{ width: '100%' }} disabled placeholder={intl.formatMessage({ id: 'pages.bill.amountPlaceholder' })} />
+            <InputNumber style={{ width: '100%' }} disabled placeholder={'Tổng tiền'} />
           </Form.Item>
           {/* Chọn ngày đến hạn */}
           <Form.Item
             name="dueDate"
-            label={intl.formatMessage({ id: 'pages.bill.dueDate' })}
-            rules={[{ required: true, message: intl.formatMessage({ id: 'pages.bill.dueDateRequired' }) }]}
+            label={'Hạn thanh toán'}
+            rules={[{ required: true, message: 'Vui lòng chọn hạn thanh toán' }]}
           >
             <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
           </Form.Item>
           {/* Chọn trạng thái */}
           <Form.Item
             name="status"
-            label={intl.formatMessage({ id: 'pages.bill.status' })}
+            label={'Trạng thái'}
             initialValue="UNPAID"
           >
             <Select
-              placeholder={intl.formatMessage({ id: 'pages.bill.statusPlaceholder' })}
+              placeholder={'Chọn trạng thái'}
               options={[
-                {
-                  value: 'PAID',
-                  label: intl.formatMessage({ id: 'pages.bill.status.paid' }),
-                },
-                {
-                  value: 'UNPAID',
-                  label: intl.formatMessage({ id: 'pages.bill.status.unpaid' }),
-                },
-                {
-                  value: 'WAITING_CONFIRMATION',
-                  label: intl.formatMessage({ id: 'pages.bill.status.waitingConfirmation' }),
-                },
+                { value: 'PAID', label: 'Đã thanh toán' },
+                { value: 'UNPAID', label: 'Chưa thanh toán' },
+                { value: 'WAITING_CONFIRMATION', label: 'Chờ xác nhận' },
               ]}
             />
           </Form.Item>
@@ -984,12 +972,12 @@ export default () => {
 
       {/* Modal thanh toán */}
       <Modal
-        title={intl.formatMessage({ id: 'pages.bill.paymentModalTitle' }) || 'Thanh toán hóa đơn'}
+        title={'Thanh toán hóa đơn'}
         open={paymentModalOpen}
         onCancel={() => setPaymentModalOpen(false)}
         footer={[
           <Button key="cancel" onClick={() => setPaymentModalOpen(false)}>
-            {intl.formatMessage({ id: 'pages.common.cancel' }) || 'Hủy'}
+            {'Hủy'}
           </Button>,
           <Form.Item noStyle shouldUpdate>
             {({ getFieldValue }) => {
@@ -998,19 +986,19 @@ export default () => {
               if (paymentMethod === 'CASH') {
                 return (
                   <Button key="submit" type="primary" onClick={() => paymentForm.submit()}>
-                    {intl.formatMessage({ id: 'pages.bill.confirmPayment' }) || 'Xác nhận thanh toán'}
+                    {'Xác nhận thanh toán'}
                   </Button>
                 );
               } else if (paymentMethod === 'BANK_TRANSFER') {
                 return (
                   <Button key="submit" type="primary" onClick={() => paymentForm.submit()}>
-                    {intl.formatMessage({ id: 'pages.bill.iHaveTransferred' }) || 'Tôi đã chuyển khoản'}
+                    {'Tôi đã chuyển khoản'}
                   </Button>
                 );
               }
               return (
                 <Button key="submit" type="primary" onClick={() => paymentForm.submit()}>
-                  {intl.formatMessage({ id: 'pages.bill.selectPaymentMethod' }) || 'Chọn phương thức'}
+                  {'Chọn phương thức'}
                 </Button>
               );
             }}
@@ -1023,16 +1011,16 @@ export default () => {
           <div>
             {/* Thông tin hóa đơn cần thanh toán */}
             <Card size="small" style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span><strong>{intl.formatMessage({ id: 'pages.bill.apartment' })}:</strong></span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span><strong>{'Căn hộ'}:</strong></span>
                 <span>{paymentRecord.apartment?.code}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span><strong>{intl.formatMessage({ id: 'pages.bill.monthYear' })}:</strong></span>
+                <span><strong>{'Tháng/Năm'}:</strong></span>
                 <span>{paymentRecord.month}/{paymentRecord.year}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span><strong>{intl.formatMessage({ id: 'pages.bill.totalAmount' })}:</strong></span>
+                <span><strong>{'Tổng tiền'}:</strong></span>
                 <span style={{ color: '#1890ff', fontWeight: 'bold' }}>
                   {paymentRecord.amount?.toLocaleString('vi-VN')} VND
                 </span>
@@ -1044,23 +1032,23 @@ export default () => {
             {/* Form thanh toán */}
             <Form form={paymentForm} layout="vertical" onFinish={handlePaymentSubmit}>
               {/* Chọn phương thức thanh toán */}
-              <Form.Item
+                <Form.Item
                 name="paymentMethod"
-                label={intl.formatMessage({ id: 'pages.bill.paymentMethod' }) || 'Phương thức thanh toán'}
-                rules={[{ required: true, message: intl.formatMessage({ id: 'pages.bill.paymentMethodRequired' }) || 'Vui lòng chọn phương thức thanh toán' }]}
+                label={'Phương thức thanh toán'}
+                rules={[{ required: true, message: 'Vui lòng chọn phương thức thanh toán' }]}
               >
                 <Radio.Group style={{ width: '100%' }}>
                   <Space direction="vertical" style={{ width: '100%' }}>
                     <Radio value="CASH">
                       <Space>
                         <DollarOutlined style={{ color: '#722ed1' }} />
-                        {intl.formatMessage({ id: 'pages.bill.paymentMethod.cash' }) || 'Tiền mặt'}
+                        {'Tiền mặt'}
                       </Space>
                     </Radio>
                     <Radio value="BANK_TRANSFER">
                       <Space>
                         <BankOutlined style={{ color: '#1890ff' }} />
-                        {intl.formatMessage({ id: 'pages.bill.paymentMethod.bankTransfer' }) || 'Chuyển khoản ngân hàng'}
+                        {'Chuyển khoản ngân hàng'}
                       </Space>
                     </Radio>
                   </Space>
@@ -1116,10 +1104,10 @@ export default () => {
               {/* Nhập ghi chú */}
               <Form.Item
                 name="notes"
-                label={intl.formatMessage({ id: 'pages.bill.paymentNotes' }) || 'Ghi chú'}
+                label={'Ghi chú'}
               >
                 <Input.TextArea
-                  placeholder={intl.formatMessage({ id: 'pages.bill.paymentNotesPlaceholder' }) || 'Nhập ghi chú (tùy chọn)'}
+                  placeholder={'Nhập ghi chú (tùy chọn)'}
                   rows={3}
                 />
               </Form.Item>
