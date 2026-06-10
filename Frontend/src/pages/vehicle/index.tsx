@@ -1,3 +1,6 @@
+// Trang quản lý phương tiện (Xe)
+// Mục đích file: hiển thị danh sách xe, tìm kiếm, lọc, thêm/sửa/xóa.
+// Chú thích tiếng Việt được thêm cho từng hàm/khối để giúp người học hiểu luồng.
 import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Modal, Form, Input, Select, message, Space } from 'antd';
@@ -16,15 +19,21 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 export default () => {
+  // Hook lấy thông tin người dùng hiện tại từ initialState
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
+  // Kiểm tra role để ẩn/hiện chức năng quản lý cho resident
   const isResident = currentUser?.role === 'RESIDENT';
+  // actionRef dùng để reload ProTable từ bên ngoài
   const actionRef = useRef<ActionType | null>(null);
+  // Modal & form state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<VehicleItem | null>(null);
   const [form] = Form.useForm();
+  // Dữ liệu tham chiếu: căn hộ và cư dân
   const [apartments, setApartments] = useState<ApartmentItem[]>([]);
   const [residents, setResidents] = useState<ResidentItem[]>([]);
+  // Dữ liệu bảng và trạng thái tìm kiếm/lọc
   const [allData, setAllData] = useState<VehicleItem[]>([]);
   const [quickSearch, setQuickSearch] = useState<string>('');
   const [searchText, setSearchText] = useState<string>('');
@@ -40,6 +49,8 @@ export default () => {
     }
   };
 
+  // Tải danh sách căn hộ (dùng cho select trong form)
+
   const loadResidents = async () => {
     try {
       const data = await getResidents();
@@ -49,6 +60,8 @@ export default () => {
     }
   };
 
+  // Tải danh sách cư dân (dùng để map ownerId khi chọn căn hộ)
+
   useEffect(() => {
     loadApartments();
     loadResidents();
@@ -57,6 +70,8 @@ export default () => {
   const getVehicleTypeText = (type: string) => {
     return vehicleTypeMap[type] || type;
   };
+
+  // Chuyển mã loại xe sang chuỗi hiển thị (ví dụ: 'MOTOR' -> 'Xe máy')
 
   const getFieldValue = (item: VehicleItem, field: string) => {
     switch (field) {
@@ -68,6 +83,8 @@ export default () => {
         return (item as any)[field];
     }
   };
+
+  // Lấy giá trị trường động từ item theo tên field (dùng cho lọc nâng cao)
 
   const applyOperator = (value: any, operator: string, compare: any) => {
     if (operator === 'isEmpty') {
@@ -97,6 +114,8 @@ export default () => {
         return false;
     }
   };
+
+  // Áp dụng toán tử lọc đơn giản (eq, ne, contains, isEmpty...)
 
   const filterData = (data: VehicleItem[]) => {
     let filtered = [...data];
@@ -128,6 +147,8 @@ export default () => {
     return filtered;
   };
 
+  // filterData: áp dụng quickSearch và các filterRows vào bộ dữ liệu
+
   const handleCreate = async (values: any) => {
     try {
       await createVehicle(values);
@@ -139,6 +160,8 @@ export default () => {
       message.error('Thao tác xe thất bại');
     }
   };
+
+  // Tạo mới xe: gọi API createVehicle, reload table khi thành công
 
   const handleUpdate = async (values: any) => {
     if (!editingRecord) return;
@@ -153,6 +176,8 @@ export default () => {
       message.error('Thao tác xe thất bại');
     }
   };
+
+  // Cập nhật xe hiện tại (editingRecord)
 
   const handleDelete = async (record: VehicleItem) => {
     Modal.confirm({
@@ -170,11 +195,15 @@ export default () => {
     });
   };
 
+  // Xóa xe: xác nhận rồi gọi API deleteVehicle
+
   const handleAdd = () => {
     setEditingRecord(null);
     form.resetFields();
     setIsModalOpen(true);
   };
+
+  // Mở modal để thêm mới
 
   const handleEdit = (record: VehicleItem) => {
     setEditingRecord(record);
@@ -189,6 +218,8 @@ export default () => {
     setIsModalOpen(true);
   };
 
+  // Mở modal để sửa, và set giá trị ownerId dựa trên apartmentId nếu có
+
   const handleValuesChange = (changedValues: any) => {
     if (changedValues.apartmentId) {
       const selectedApartmentId = changedValues.apartmentId;
@@ -199,12 +230,16 @@ export default () => {
     }
   };
 
+  // Khi thay đổi apartmentId trong form, tự động set ownerId tương ứng nếu tìm thấy cư dân
+
   const handleFilterSubmit = (values: { quickSearch: string; filters: FilterRowItem[] }) => {
     setQuickSearch(values.quickSearch || '');
     setFilterRows(values.filters || []);
     setFilterDrawerOpen(false);
     actionRef.current?.reload();
   };
+
+  // Áp dụng filter từ AdvancedFilterDrawer vào state và reload bảng
 
   const handleClearFilters = () => {
     setQuickSearch('');
@@ -214,16 +249,22 @@ export default () => {
     actionRef.current?.reload();
   };
 
+  // Xóa nhanh các filter và reset quickSearch
+
   const handleExternalSearch = (value: string) => {
     setQuickSearch(value);
     setSearchText(value);
     actionRef.current?.reload();
   };
 
+  // Tìm kiếm từ toolbar (Input.Search) — cập nhật quickSearch và reload
+
   const handleCancel = () => {
     setIsModalOpen(false);
     setEditingRecord(null);
   };
+
+  // Hủy modal, reset trạng thái editing
 
   const columns: ProColumns<VehicleItem>[] = [
     {
@@ -308,6 +349,10 @@ export default () => {
     },
   ];
 
+  // Cấu hình các cột cho ProTable
+  // - Hiển thị thông tin cơ bản của xe: loại, biển số, căn hộ, chủ, ngày đăng ký
+  // - Cột hành động chỉ hiển thị với tài khoản không phải resident
+
   const filterFields: FilterFieldDefinition[] = [
     {
       key: 'type',
@@ -342,6 +387,9 @@ export default () => {
       type: 'text',
     },
   ];
+
+  // Định nghĩa các trường cho AdvancedFilterDrawer
+  // Người dùng có thể lọc theo type, apartmentId, ownerId, licensePlate
 
   return (
     <>
@@ -416,6 +464,7 @@ export default () => {
         onOk={() => form.submit()}
         destroyOnHidden
       >
+        {/* Modal chứa form tạo/cập nhật xe */}
         <Form
           form={form}
           layout="vertical"

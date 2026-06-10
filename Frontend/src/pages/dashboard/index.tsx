@@ -1,3 +1,4 @@
+// Thư viện Ant Design dùng cho layout và các component hiển thị
 import {
   Card,
   Col,
@@ -8,6 +9,7 @@ import {
   List,
 } from 'antd';
 import { Column, Line, Pie } from '@ant-design/plots';
+// Icon dùng để hiển thị biểu tượng trong các thẻ số liệu và danh sách hoạt động
 import {
   HomeOutlined,
   TeamOutlined,
@@ -25,7 +27,8 @@ import dayjs from 'dayjs';
 import { useModel } from '@umijs/max';
 import { getDashboard } from '@/services/dashboard';
 
-
+// Kiểu dữ liệu cho Dashboard, xác định cấu trúc dữ liệu API trả về
+// Dùng để TypeScript kiểm tra và hỗ trợ gợi ý khi truy cập các trường dữ liệu
 type DashboardData = {
   totalApartment: string | number;
   totalResident: number;
@@ -57,11 +60,13 @@ type DashboardData = {
 };
 
 const Dashboard = () => {
-  
+  // Lấy trạng thái toàn cục do Umi cung cấp: thông tin người dùng, cấu hình ban đầu
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
+  // Kiểm tra xem người dùng hiện tại có phải cư dân hay không
   const isResident = currentUser?.role === 'RESIDENT';
 
+  // Trạng thái local component
   const [chartType, setChartType] = useState<'column' | 'line' | 'pie'>('column');
   const [year, setYear] = useState(dayjs());
   const [data, setData] = useState<DashboardData | null>(null);
@@ -69,7 +74,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     setLoading(true);
-    // Backend tự nhận diện Role qua Token, chỉ cần gửi Year
+    // Gọi API Dashboard. Backend tự nhận diện Role từ Token,
+    // nên frontend chỉ cần gửi năm để lọc dữ liệu.
     getDashboard({ year: year.format('YYYY') })
       .then((res) => {
         console.log('📊 Dashboard data received:', res);
@@ -82,11 +88,14 @@ const Dashboard = () => {
       .finally(() => setLoading(false));
   }, [year]);
 
+  // Trả về giá trị của hoạt động theo key, nếu không tìm thấy thì trả về 0
   const getActivityValue = (key: string) => {
     const activity = data?.activities?.find((item) => item.key === key);
     return activity?.count || 0;
   };
 
+  // Tạo danh sách hoạt động hiển thị trong cột bên phải
+  // Mỗi phần tử là một chuỗi mô tả và số lượng
   const activityList = () => {
     if (!data) return [];
 
@@ -105,6 +114,7 @@ const Dashboard = () => {
     ];
   };
 
+  // Hiển thị mỗi dòng hoạt động kèm icon và màu tương ứng
   const renderActivityItem = (item: string, index: number) => {
     const paidBillsLabel = 'Hóa đơn đã thanh toán';
     const unpaidBillsLabel = 'Hóa đơn chưa thanh toán';
@@ -142,6 +152,7 @@ const Dashboard = () => {
     );
   };
 
+  // Bản đồ màu cho các loại phí trong biểu đồ cư dân
   const feeColorMap: Record<string, string> = {
     Điện: '#1890ff',
     Nước: '#52c41a',
@@ -153,7 +164,7 @@ const Dashboard = () => {
   const renderChart = () => {
     if (!data) return null;
 
-    // Giao diện cho Cư dân: Ưu tiên biểu đồ tròn (Pie) hoặc biểu đồ chi phí chi tiết (CostData)
+    // Nếu người dùng là cư dân thì hiển thị biểu đồ chi phí chi tiết theo loại phí
     if (isResident) {
       if (chartType === 'pie') {
         return (
@@ -179,10 +190,11 @@ const Dashboard = () => {
         smooth: chartType === 'line',
       };
 
+      // Biểu đồ cột hoặc đường với dữ liệu chi phí theo tháng và loại phí
       return chartType === 'line' ? <Line {...residentChartProps} /> : <Column {...residentChartProps} />;
     }
 
-    // Giao diện cho Admin: Biểu đồ doanh thu tổng quát
+    // Nếu người dùng là Admin thì hiển thị biểu đồ doanh thu theo tháng
     if (chartType === 'pie') {
       return (
         <Pie
@@ -206,6 +218,8 @@ const Dashboard = () => {
     return chartType === 'line' ? <Line {...adminChartProps} /> : <Column {...adminChartProps} />;
   };
 
+  // Các thành phần giao diện chính của Dashboard
+  // Bao gồm: bộ lọc năm, các thẻ số liệu, biểu đồ và danh sách hoạt động
   return (
     <div style={{ padding: 24 }}>
       <Row gutter={[16, 16]}>

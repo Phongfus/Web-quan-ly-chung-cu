@@ -29,7 +29,7 @@ export default () => {
 
       const socket = initSocketClient();
 
-      socket.connect(); // 🔥 BẮT BUỘC
+      socket.connect(); 
 
       socket.on("connect", () => {
         console.log("✅ connected, join user");
@@ -47,6 +47,7 @@ export default () => {
   const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
 
   const loadUnreadCount = async () => {
+    // Tải số lượng thông báo chưa đọc và cập nhật badge hiển thị
     try {
       const result = await getUnreadCount();
       setUnreadCount(result.count);
@@ -56,6 +57,7 @@ export default () => {
   };
 
   const loadResidents = async () => {
+    // Tải danh sách cư dân để dùng cho lựa chọn người nhận khi admin gửi thông báo
     try {
       const data = await getResidents();
       setResidents(data);
@@ -65,6 +67,7 @@ export default () => {
   };
 
   const loadApartments = async () => {
+    // Tải danh sách căn hộ để phân loại người nhận theo tầng/căn hộ
     try {
       const data = await getApartments();
       setApartments(data);
@@ -84,21 +87,21 @@ export default () => {
     }
   }, [access.isAdmin]);
 
-  // Socket listeners for real-time updates
+  // Lắng nghe socket để cập nhật thông báo thời gian thực
   useEffect(() => {
-    // Listen for new notifications
+    // Lắng nghe sự kiện thông báo mới
     const unsubscribeNewNotif = on('notification:new', () => {
       actionRef.current?.reload();
       loadUnreadCount();
     });
 
-    // Listen for notification read events
+    // Lắng nghe sự kiện thông báo đã được đánh dấu đọc
     const unsubscribeReadNotif = on('notification:read', () => {
       actionRef.current?.reload();
       loadUnreadCount();
     });
 
-    // Listen for all notifications read
+    // Lắng nghe sự kiện tất cả thông báo đã được đánh dấu đọc
     const unsubscribeAllReadNotif = on('notification:allread', () => {
       actionRef.current?.reload();
       setUnreadCount(0);
@@ -135,6 +138,7 @@ export default () => {
   }));
 
   const getTargetUserIds = () => {
+    // Trả về danh sách userIds theo chế độ chọn người nhận hiện tại
     if (recipientMode === 'all') {
       return residents.map((resident) => resident.user.id);
     }
@@ -168,16 +172,18 @@ export default () => {
   };
 
   const handleMarkAsRead = async (record: NotificationItem) => {
+    // Đánh dấu một thông báo cụ thể là đã đọc và tin nhắn sẽ cập nhật bằng socket
     try {
       await markAsRead(record.id);
       message.success('Đánh dấu thông báo là đã đọc');
-      // Socket event will automatically update the table and unread count
+      // Sự kiện socket sẽ tự động cập nhật lại bảng và số lượng chưa đọc
     } catch (error) {
       message.error('Đánh dấu thông báo thất bại');
     }
   };
 
   const handleDeleteNotification = async (record: NotificationItem) => {
+    // Xóa thông báo khỏi server và reload bảng sau khi xóa thành công
     try {
       await deleteNotification(record.id);
       message.success('Xóa thông báo thành công');
@@ -193,6 +199,7 @@ export default () => {
   };
 
   const handleCreate = async (values: any) => {
+    // Tạo thông báo mới với danh sách userIds đã chọn theo chế độ nhận
     const userIds = getTargetUserIds();
 
     if (!userIds.length) {
@@ -218,16 +225,18 @@ export default () => {
   };
 
   const handleMarkAllAsRead = async () => {
+    // Đánh dấu tất cả thông báo hiện tại là đã đọc trên server
     try {
       await markAllAsRead();
       message.success('Đánh dấu tất cả thông báo là đã đọc');
-      // Socket event will automatically update the table and unread count
+      // Sự kiện socket sẽ tự động cập nhật lại bảng và số lượng chưa đọc
     } catch (error) {
       message.error('Đánh dấu tất cả thông báo thất bại');
     }
   };
 
   const handleViewDetail = async (record: NotificationItem) => {
+    // Mở modal xem chi tiết thông báo và nếu cần thì đánh dấu là đã đọc
     setSelectedNotification(record);
     setDetailModalVisible(true);
 
@@ -510,6 +519,7 @@ export default () => {
       <ProTable<NotificationItem>
         actionRef={actionRef}
         columns={columns}
+        // Yêu cầu dữ liệu thông báo từ API với phân trang
         request={async (params) => {
           const { current = 1, pageSize = 10 } = params;
           const result = await getNotifications({
@@ -528,6 +538,7 @@ export default () => {
           showSizeChanger: true,
         }}
         search={false}
+        // Nút chức năng trên thanh công cụ bảng
         toolBarRender={() => [
           <Button
             key="mark-all-read"

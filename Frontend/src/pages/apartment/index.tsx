@@ -55,6 +55,7 @@ export default () => {
   };
 
   useEffect(() => {
+    // Load dữ liệu phụ trợ 1 lần khi component mount
     loadMetaData();
   }, []);
 
@@ -469,6 +470,7 @@ export default () => {
           defaultPageSize: 10,
         }}
         scroll={{ x: 'max-content', y: 'max-content' }}
+        // Các nút công cụ trên thanh toolbar: tìm kiếm, mở bộ lọc, xóa bộ lọc, thêm mới
         toolBarRender={() => [
           <Input.Search
             key="quickSearch"

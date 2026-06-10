@@ -1,3 +1,9 @@
+// =====================
+// Trang quản lý `Dịch vụ`
+// - Hiển thị danh sách yêu cầu dịch vụ, hỗ trợ tìm kiếm, lọc, sắp xếp
+// - Cho phép thêm/sửa/xóa (tuỳ quyền: resident/admin)
+// - Gọi các service API từ `@/services/service` và `@/services/apartment`
+// =====================
 import { useState, useRef, useEffect } from 'react';
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Tag, Modal, Form, Input, Select, message, Space } from 'antd';
@@ -16,6 +22,11 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 export default () => {
+  // =====================
+  // Thông tin người dùng và quyền
+  // - `initialState` lấy từ umi để biết role hiện tại (RESIDENT/ADMIN)
+  // - `serviceStatusSequence` dùng để xác định trạng thái tiếp theo cho service
+  // =====================
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const isResident = currentUser?.role === 'RESIDENT';
@@ -23,6 +34,13 @@ export default () => {
   const serviceStatusSequence = ['PENDING', 'PROCESSING', 'DONE'] as const;
 
   const actionRef = useRef<ActionType | null>(null);
+  // =====================
+  // Refs & state component
+  // - actionRef: tham chiếu ProTable
+  // - isModalOpen/editingRecord/form: quản lý modal thêm/sửa
+  // - apartments/currentResident/allData/quickSearch/filterRows: dữ liệu + bộ lọc
+  // - createdAtSort/statusSort: trạng thái sắp xếp
+  // =====================
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ServiceItem | null>(null);
   const [form] = Form.useForm();
@@ -36,6 +54,11 @@ export default () => {
   const [statusSort, setStatusSort] = useState<SortDirection>(null);
 
   const loadApartments = async () => {
+    // =====================
+    // API loader: loadApartments
+    // - Nếu current user là resident: lấy thông tin resident hiện tại và set apartment tương ứng
+    // - Nếu không: lấy toàn bộ apartments từ API
+    // =====================
     try {
       if (isResident) {
         const residentData = await getCurrentResident();
@@ -69,6 +92,9 @@ export default () => {
     return typeMap[type] || type;
   };
 
+  // Chuyển mã `type` thành chuỗi thân thiện để hiển thị trong UI
+  // Ví dụ: 'ELECTRIC' -> 'Tiền điện'
+
   const getStatusConfig = (status: string) => {
     const statusMap: Record<string, { text: string; color: string }> = {
       PENDING: { text: 'Chờ xử lý', color: 'orange' },
@@ -78,11 +104,15 @@ export default () => {
     return statusMap[status] || { text: status, color: 'default' };
   };
 
+  // Lấy cấu hình hiển thị cho trạng thái (text + color)
+
   const getNextServiceStatus = (status: ServiceItem['status']) => {
     const index = serviceStatusSequence.indexOf(status);
     if (index < 0) return status;
     return serviceStatusSequence[(index + 1) % serviceStatusSequence.length];
   };
+
+  // Xác định trạng thái tiếp theo trong chuỗi trạng thái (dùng khi admin click đổi trạng thái)
 
   const handleStatusClick = async (record: ServiceItem) => {
     if (!isAdmin) return;
@@ -98,6 +128,15 @@ export default () => {
     }
   };
 
+  // Handler khi admin click vào tag trạng thái
+  // - Gọi API updateService để cập nhật trạng thái
+  // - Reload bảng khi thành công
+
+  // =====================
+  // Định nghĩa các cột cho ProTable (Service list)
+  // - Cột `Loại dịch vụ` dùng `getServiceTypeText`
+  // - Cột `Trạng thái` có thể click để admin thay đổi trạng thái
+  // =====================
   const columns: ProColumns<ServiceItem>[] = [
     {
       title: 'STT',
@@ -227,6 +266,8 @@ export default () => {
   ];
 
   const handleAdd = async () => {
+    // Mở modal để thêm mới dịch vụ
+    // - Nếu là resident: tự động lấy và điền apartmentId
     setEditingRecord(null);
     form.resetFields();
     
@@ -254,12 +295,14 @@ export default () => {
   };
 
   const handleEdit = (record: ServiceItem) => {
+    // Mở modal ở chế độ sửa, điền dữ liệu hiện tại vào form
     setEditingRecord(record);
     form.setFieldsValue(record);
     setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
+    // Hiển thị modal xác nhận và gọi API xóa khi đồng ý
     Modal.confirm({
       title: 'Xác nhận xóa',
       content: 'Bạn có chắc chắn muốn xóa yêu cầu dịch vụ này?',
@@ -276,14 +319,15 @@ export default () => {
   };
 
   const handleSubmit = async (values: any) => {
+    // Xử lý submit form thêm/sửa
     try {
       let submitValues = { ...values };
-      
-      // Nếu là resident khi tạo mới, không gửi apartmentId vì backend sẽ tự động lấy
+
+      // Nếu là resident khi tạo mới, không gửi apartmentId vì backend sẽ tự lấy
       if (!editingRecord && isResident) {
         delete submitValues.apartmentId;
       }
-      
+
       if (editingRecord) {
         await updateService(editingRecord.id, submitValues);
         message.success('Cập nhật dịch vụ thành công');
@@ -299,6 +343,10 @@ export default () => {
   };
 
   const filterFields: FilterFieldDefinition[] = [
+  // =====================
+  // Cấu hình bộ lọc nâng cao (AdvancedFilterDrawer)
+  // - Mô tả các trường có thể lọc tại client
+  // =====================
     { key: 'id', label: 'ID', type: 'text' },
     { key: 'apartmentCode', label: 'Căn hộ', type: 'text' },
     { key: 'requesterName', label: 'Người yêu cầu', type: 'text' },
@@ -338,6 +386,8 @@ export default () => {
     }
   };
 
+  // Lấy giá trị tương ứng của các field để sử dụng khi lọc dữ liệu
+
   const applyOperator = (value: any, operator: string, compare: any) => {
     if (operator === 'isEmpty') {
       return value === undefined || value === null || value === '';
@@ -374,6 +424,8 @@ export default () => {
         return false;
     }
   };
+
+  // Áp toán tử lọc khi so sánh giá trị (eq, contains, gt, ...)
 
   const filterData = (data: ServiceItem[]) => {
     let filtered = [...data];
@@ -426,6 +478,8 @@ export default () => {
 
     return filtered;
   };
+
+  // filterData: lọc dữ liệu theo quickSearch + filterRows, hỗ trợ sắp xếp theo createdAt hoặc status
 
   const handleFilterSubmit = (values: { quickSearch: string; filters: FilterRowItem[] }) => {
     setQuickSearch(values.quickSearch || '');

@@ -1,20 +1,37 @@
+// Thư viện React và các hook cơ bản
 import { useState, useRef, useEffect } from 'react';
+// Table/pro-components và kiểu dữ liệu bảng
 import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
+// Component UI của Ant Design
 import { Button, Tag, Modal, Form, Input, message, Switch, Select } from 'antd';
+// Icon sử dụng trong các action/button
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+// Lấy initialState (user info) từ umi
 import { useModel } from '@umijs/max';
+// Drawer bộ lọc nâng cao
 import AdvancedFilterDrawer, {
   FilterFieldDefinition,
   FilterRowItem,
 } from '@/components/AdvancedFilterDrawer';
+// API services và kiểu dữ liệu liên quan
 import { getResidents, createResident, updateResident, deleteResident, ResidentItem } from '@/services/resident';
 import { getApartments, getAvailableApartments, ApartmentItem } from '@/services/apartment';
 
 export default () => {
-  
+  // =====================
+  // Thông tin người dùng & quyền
+  // - Lấy `currentUser` từ initialState để xác định role (ví dụ: RESIDENT)
+  // =====================
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const isResident = currentUser?.role === 'RESIDENT';
+
+  // =====================
+  // Refs và state chính của component
+  // - actionRef: tham chiếu tới ProTable để gọi reload
+  // - isModalOpen/editingRecord/form: quản lý modal thêm/sửa
+  // - apartments/allData/quickSearch/filterRows: dữ liệu và bộ lọc
+  // =====================
   const actionRef = useRef<ActionType | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ResidentItem | null>(null);
@@ -25,10 +42,14 @@ export default () => {
   const [filterRows, setFilterRows] = useState<FilterRowItem[]>([]);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
+  // =====================
+  // API: loadApartments
+  // - isAddMode = true  => lấy căn hộ còn trống (dùng khi thêm)
+  // - isAddMode = false => lấy tất cả căn hộ (dùng khi sửa)
+  // Side effect: cập nhật state `apartments`
+  // =====================
   const loadApartments = async (isAddMode: boolean = true) => {
     try {
-      // Khi thêm cư dân mới, chỉ tải những căn hộ không có cư dân
-      // Khi sửa, tải tất cả các căn hộ
       const data = isAddMode ? await getAvailableApartments() : await getApartments();
       setApartments(data);
     } catch (error) {
@@ -36,10 +57,16 @@ export default () => {
     }
   };
 
+  // Khi component mount: tải danh sách căn hộ mặc định (dùng cho chế độ thêm)
   useEffect(() => {
     loadApartments();
   }, []);
 
+  // =====================
+  // Cấu hình cột cho ProTable (hiển thị dữ liệu cư dân)
+  // - Các cột cơ bản: STT, ID, Họ tên, Email, SĐT, Căn hộ, CMND, Trạng thái, Ngày tạo
+  // - Cột `Thao tác` chỉ hiển thị khi người dùng không phải cư dân
+  // =====================
   const columns: ProColumns<ResidentItem>[] = [
     {
       title: 'STT',
@@ -123,6 +150,10 @@ export default () => {
     ]),
   ];
 
+  // =====================
+  // Handlers: Thêm / Sửa / Xóa
+  // - handleAdd: chuẩn bị form và mở modal ở chế độ thêm
+  // =====================
   const handleAdd = () => {
     setEditingRecord(null);
     form.resetFields();
@@ -131,6 +162,7 @@ export default () => {
     setIsModalOpen(true);
   };
 
+  // - handleEdit: điền giá trị vào form và mở modal ở chế độ sửa
   const handleEdit = (record: ResidentItem) => {
     setEditingRecord(record);
     loadApartments(false); // Tải tất cả căn hộ
@@ -145,6 +177,7 @@ export default () => {
     setIsModalOpen(true);
   };
 
+  // - handleDelete: xác nhận rồi gọi API xóa cư dân theo id
   const handleDelete = async (id: string) => {
     Modal.confirm({
       title: 'Xác nhận xóa?',
@@ -161,11 +194,19 @@ export default () => {
     });
   };
 
+  // =====================
+  // Helpers: xử lý dữ liệu form
+  // - normalizeResidentEmail: chuẩn hóa email (thêm @gmail.com nếu cần)
+  // =====================
   const normalizeResidentEmail = (email: string) => {
     const localPart = String(email || '').trim().split('@')[0];
     return `${localPart}@gmail.com`;
   };
 
+  // - handleSubmit: gọi API tạo hoặc cập nhật cư dân
+  //   + Nếu đang sửa (editingRecord tồn tại) => updateResident
+  //   + Nếu thêm mới => chuẩn hóa email rồi createResident
+  // Side effects: đóng modal và reload bảng khi thành công
   const handleSubmit = async (values: any) => {
     try {
       const payload = editingRecord
@@ -188,6 +229,10 @@ export default () => {
     }
   };
 
+  // =====================
+  // Cấu hình cho AdvancedFilterDrawer
+  // - filterFields: danh sách trường và kiểu filter hỗ trợ
+  // =====================
   const filterFields: FilterFieldDefinition[] = [
     { key: 'id', label: 'ID', type: 'text' },
     { key: 'fullName', label: 'Họ tên', type: 'text' },
@@ -206,6 +251,7 @@ export default () => {
     },
   ];
 
+  // Lấy giá trị trường tương ứng từ một `ResidentItem` để dùng cho lọc
   const getFieldValue = (item: ResidentItem, field: string) => {
     switch (field) {
       case 'fullName':
@@ -223,6 +269,8 @@ export default () => {
     }
   };
 
+  // Áp toán tử lọc giữa giá trị và giá trị so sánh
+  // Hỗ trợ: isEmpty, isNotEmpty, eq, ne, contains, notContains, gt, lt, gte, lte
   const applyOperator = (value: any, operator: string, compare: any) => {
     if (operator === 'isEmpty') {
       return value === undefined || value === null || value === '';
@@ -260,6 +308,7 @@ export default () => {
     }
   };
 
+  // Lọc dữ liệu dựa trên quickSearch và filterRows, sau đó sắp xếp
   const filterData = (data: ResidentItem[]) => {
     let filtered = [...data];
 
@@ -288,12 +337,13 @@ export default () => {
       );
     }
 
-    // Sắp xếp theo ID tăng dần
+    // Sắp xếp theo ID tăng dần trước khi trả về
     filtered.sort((a, b) => a.id.localeCompare(b.id));
 
     return filtered;
   };
 
+  // Áp dụng bộ lọc từ drawer: cập nhật state tìm kiếm và filterRows rồi reload
   const handleFilterSubmit = (values: { quickSearch: string; filters: FilterRowItem[] }) => {
     setQuickSearch(values.quickSearch || '');
     setFilterRows(values.filters || []);
@@ -301,6 +351,7 @@ export default () => {
     actionRef.current?.reload();
   };
 
+  // Xóa bộ lọc & tìm kiếm, reload lại bảng
   const handleClearFilters = () => {
     setQuickSearch('');
     setFilterRows([]);

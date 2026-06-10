@@ -11,26 +11,37 @@ import { getComplaints, createComplaint, updateComplaint, deleteComplaint, Compl
 import { getApartments, ApartmentItem } from '@/services/apartment';
 import { getCurrentResident, ResidentItem } from '@/services/resident';
 
+// Cấu hình các thành phần phụ của Ant Design
+// Option được sử dụng cho Select trong form trạng thái
+// TextArea được dùng cho trường nội dung mô tả khiếu nại
 const { Option } = Select;
 const { TextArea } = Input;
 
+// Component chính của trang khiếu nại
+// Hiển thị bảng danh sách, drawer lọc nâng cao và modal thêm/sửa khiếu nại
 export default () => {
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
   const isResident = currentUser?.role === 'RESIDENT';
   const isAdmin = currentUser?.role === 'ADMIN';
   const complaintStatusSequence = ['PENDING', 'RESOLVED'] as const;
+  // Ref để điều khiển lại bảng ProTable từ các event bên ngoài
   const actionRef = useRef<ActionType | null>(null);
+  // Trạng thái modal thêm/sửa khiếu nại
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ComplaintItem | null>(null);
   const [form] = Form.useForm();
+  // Dữ liệu căn hộ để chọn khi tạo/sửa khiếu nại
   const [apartments, setApartments] = useState<ApartmentItem[]>([]);
+  // Thông tin cư dân hiện tại, chỉ dùng khi role là RESIDENT
   const [currentResident, setCurrentResident] = useState<ResidentItem | null>(null);
+  // Lưu dữ liệu gốc từ API để áp dụng tìm kiếm và bộ lọc phía client
   const [allData, setAllData] = useState<ComplaintItem[]>([]);
   const [quickSearch, setQuickSearch] = useState<string>('');
   const [filterRows, setFilterRows] = useState<FilterRowItem[]>([]);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
+  // Tải danh sách căn hộ tùy theo vai trò người dùng
   const loadApartments = async () => {
     try {
       if (isResident) {
@@ -57,6 +68,7 @@ export default () => {
     loadApartments();
   }, [isResident]);
 
+  // Lấy màu hiển thị tag theo trạng thái khiếu nại
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING":
@@ -79,12 +91,14 @@ export default () => {
     }
   };
 
+  // Xác định trạng thái tiếp theo khi admin click đổi trạng thái
   const getNextComplaintStatus = (status: ComplaintItem['status']) => {
     const index = complaintStatusSequence.indexOf(status);
     if (index === -1) return status;
     return complaintStatusSequence[(index + 1) % complaintStatusSequence.length];
   };
 
+  // Xử lý click vào tag trạng thái (chỉ admin được phép thay đổi)
   const handleStatusClick = async (record: ComplaintItem) => {
     if (!isAdmin) return;
     const nextStatus = getNextComplaintStatus(record.status);
@@ -99,6 +113,7 @@ export default () => {
     }
   };
 
+  // Định nghĩa các cột cho bảng khiếu nại
   const columns: ProColumns<ComplaintItem>[] = [
     {
       title: 'STT',
@@ -188,6 +203,7 @@ export default () => {
         ]),
   ];
 
+  // Mở modal tạo khiếu nại mới
   const handleAdd = async () => {
     setEditingRecord(null);
     form.resetFields();
@@ -217,6 +233,7 @@ export default () => {
     setIsModalOpen(true);
   };
 
+  // Mở modal sửa khiếu nại hiện tại
   const handleEdit = (record: ComplaintItem) => {
     setEditingRecord(record);
     form.setFieldsValue({
@@ -228,6 +245,7 @@ export default () => {
     setIsModalOpen(true);
   };
 
+  // Xóa khiếu nại sau khi xác nhận
   const handleDelete = async (id: string) => {
     Modal.confirm({
       title: 'Xác nhận xóa',
@@ -244,6 +262,7 @@ export default () => {
     });
   };
 
+  // Gửi dữ liệu form lên API để tạo hoặc cập nhật khiếu nại
   const handleSubmit = async (values: any) => {
     try {
       if (editingRecord) {
@@ -262,6 +281,7 @@ export default () => {
     }
   };
 
+  // Cấu hình các trường lọc hiển thị trong AdvancedFilterDrawer
   const filterFields: FilterFieldDefinition[] = [
     { key: 'id', label: 'ID', type: 'text' },
     { key: 'title', label: 'Tiêu đề', type: 'text' },
@@ -278,6 +298,7 @@ export default () => {
     },
   ];
 
+  // Lấy giá trị trường tương ứng từ item khi áp dụng bộ lọc
   const getFieldValue = (item: ComplaintItem, field: string) => {
     switch (field) {
       case 'apartmentCode':
@@ -287,6 +308,7 @@ export default () => {
     }
   };
 
+  // So sánh giá trị với toán tử bộ lọc để lọc dữ liệu
   const applyOperator = (value: any, operator: string, compare: any) => {
     if (operator === 'isEmpty') {
       return value === undefined || value === null || value === '';
@@ -324,6 +346,7 @@ export default () => {
     }
   };
 
+  // Áp dụng tìm kiếm nhanh và filter nâng cao lên dữ liệu khiếu nại
   const filterData = (data: ComplaintItem[]) => {
     let filtered = [...data];
 
@@ -359,6 +382,7 @@ export default () => {
     return filtered;
   };
 
+  // Áp dụng bộ lọc từ drawer và reload bảng
   const handleFilterSubmit = (values: { quickSearch: string; filters: FilterRowItem[] }) => {
     setQuickSearch(values.quickSearch || '');
     setFilterRows(values.filters || []);
@@ -366,6 +390,7 @@ export default () => {
     actionRef.current?.reload();
   };
 
+  // Xóa toàn bộ bộ lọc và tìm kiếm
   const handleClearFilters = () => {
     setQuickSearch('');
     setFilterRows([]);
@@ -373,6 +398,8 @@ export default () => {
     actionRef.current?.reload();
   };
 
+  // Render bảng chính và các thành phần modal, drawer
+  // ProTable lấy dữ liệu từ API và sau đó áp dụng lọc phía client
   return (
     <>
       <ProTable<ComplaintItem>
@@ -419,8 +446,10 @@ export default () => {
           </Button>,
         ]}
         request={async () => {
+          // Gọi API lấy danh sách khiếu nại, lưu gốc vào allData
           const data = await getComplaints();
           setAllData(data);
+          // Áp dụng tìm kiếm nhanh và bộ lọc client-side trước khi trả về table
           const filteredData = filterData(data);
           return {
             data: filteredData,
@@ -490,6 +519,7 @@ export default () => {
             </Form.Item>
           )}
           {isResident && currentResident && (
+            // Cư dân không cần chọn căn hộ vì đã cố định sẵn apartmentId
             <Form.Item name="apartmentId" hidden>
               <Input type="hidden" />
             </Form.Item>

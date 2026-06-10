@@ -711,13 +711,7 @@ export default () => {
             {'Xuất Excel'}
           </Button>,
           // Nút thêm hóa đơn mới (chỉ admin)
-          ...(access.isResident
-            ? []
-            : [
-                <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                  {'Thêm mới'}
-                </Button>,
-              ]),
+          ...(access.isResident ?[]: [ <Button key="add" type="primary" icon={<PlusOutlined />} onClick={handleAdd}> {'Thêm mới'} </Button>, ]),
         ]}
         request={async () => {
           const data = await getBills();

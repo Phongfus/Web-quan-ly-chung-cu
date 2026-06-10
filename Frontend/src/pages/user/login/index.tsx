@@ -1,3 +1,6 @@
+// Trang đăng nhập
+// Mục đích: cung cấp form đăng nhập (email + password) và xử lý gửi dữ liệu lên API `login`.
+// Lưu ý: chỉ thêm comment để học code, không thay đổi logic.
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
 import { Helmet } from '@umijs/max';
@@ -7,6 +10,7 @@ import React from 'react';
 import { Footer } from '@/components';
 import { login } from '@/services/auth';
 
+// Hook tạo style cho container của trang
 const useStyles = createStyles(() => {
   return {
     container: {
@@ -20,9 +24,16 @@ const useStyles = createStyles(() => {
   };
 });
 
+// Component chính `Login`
+// - Hiển thị giao diện đăng nhập (background, logo, tiêu đề, form)
+// - Chứa hàm `handleSubmit` để gọi API và lưu token
 const Login: React.FC = () => {
   const { styles } = useStyles();
 
+  // Xử lý khi submit form
+  // - Gọi `login` từ `@/services/auth` với email và password
+  // - Lưu `token` vào localStorage nếu đăng nhập thành công
+  // - Hiển thị message thành công hoặc lỗi
   const handleSubmit = async (values: any) => {
     try {
       const res = await login({
@@ -30,12 +41,14 @@ const Login: React.FC = () => {
         password: values.password,
       });
 
+      // Một số API trả token ở `res.token`, một số trả ở `res.data.token`
       const token = res.token || res.data?.token;
 
       if (!token) {
         throw new Error('No token');
       }
 
+      // Lưu token và chuyển hướng về trang chủ
       localStorage.setItem('token', token);
 
       message.success('Đăng nhập thành công');
@@ -53,7 +66,7 @@ const Login: React.FC = () => {
         <title>Đăng nhập</title>
       </Helmet>
 
-      {/* Center */}
+      {/* Center: vùng chứa chính căn giữa màn hình */}
       <div
         style={{
           flex: 1,
@@ -63,7 +76,7 @@ const Login: React.FC = () => {
           padding: '32px 0',
         }}
       >
-        {/* Card */}
+        {/* Card: hộp trắng chứa logo + form */}
         <div
           style={{
             background: '#fff',
@@ -73,10 +86,12 @@ const Login: React.FC = () => {
             width: 520,
           }}
         >
+          {/* LoginForm: component của Pro Components cung cấp layout form chuẩn */}
           <LoginForm
             contentStyle={{
               width: '100%',
             }}
+            // Logo hiển thị bên trái form
             logo={ <img alt="logo"src="/logo.png"
                 style={{
                   width: 110,
@@ -87,6 +102,7 @@ const Login: React.FC = () => {
                 }}
               />
             }
+            // Title: tiêu đề lớn của trang đăng nhập
             title={
               <div
                 style={{
@@ -103,6 +119,7 @@ const Login: React.FC = () => {
                 Đăng nhập
               </div>
             }
+            // SubTitle: mô tả nhỏ bên dưới tiêu đề
             subTitle={
               <div
                 style={{
@@ -118,7 +135,7 @@ const Login: React.FC = () => {
             }
             onFinish={handleSubmit}
           >
-            {/* EMAIL */}
+            {/* Field EMAIL: bắt buộc nhập, validate required */}
             <ProFormText
               name="email"
               fieldProps={{
@@ -131,7 +148,7 @@ const Login: React.FC = () => {
               ]}
             />
 
-            {/* PASSWORD */}
+            {/* Field PASSWORD: bắt buộc nhập, kiểu password */}
             <ProFormText.Password
               name="password"
               fieldProps={{
